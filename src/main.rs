@@ -18,7 +18,7 @@ fn run_file(file_path: &String) {
         .expect("Error: file doesnt exist");
     
     let mut scanner = scanner::Scanner {
-        source: contents.as_bytes().to_vec(),
+        source: contents,
         tokens: Vec::new(),
         current: 0,
         start: 0,

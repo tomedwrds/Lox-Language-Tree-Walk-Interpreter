@@ -59,7 +59,7 @@ enum Literal {
 #[derive(Clone)]
 pub struct Token {
   token_type: TokenType,
-  lexeme: Vec<u8>,
+  lexeme: String,
   literal: Option<Literal>,
   line: usize
 }
@@ -67,9 +67,9 @@ impl fmt::Display for Token {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       write!(
           f,
-          "Token {{ ty: {:?}, lexeme: \"{}\", literal: {:?}, line: {:?}}}",
+          "Token {{ ty: {:?}, lexeme: \"{}\", literal: {:?}, line: {:?}}}\n",
           self.token_type,
-          String::from_utf8(self.lexeme.clone()).unwrap(),
+          self.lexeme,
           self.literal,
           self.line,
       )
@@ -83,7 +83,7 @@ impl Token {
 }
 
 pub struct Scanner {
-  pub source: Vec<u8>,
+  pub source: String,
   pub tokens: Vec<Token>,
   pub start: usize,
   pub current: usize,
@@ -180,9 +180,9 @@ impl Scanner {
     while self.peek().is_alphanumeric() {
       self.advance();
     }
-    let _text = String::from_utf8(self.source[self.start..self.current].to_vec()).unwrap();
+    let _text = &self.source[self.start..self.current];
     
-    let token_type = match self.keywords.get(&_text) {
+    let token_type = match self.keywords.get(_text) {
       Some(kw_token_type) => *kw_token_type,
       None => TokenType::IDENTIFIER,
     };
@@ -203,7 +203,7 @@ impl Scanner {
         self.advance();
       }
     }
-    let number: f64 = String::from_utf8(self.source[self.start..self.current].to_vec()).unwrap().parse().unwrap();
+    let number: f64 = self.source[self.start..self.current].parse().unwrap();
     self.add_token_literal(TokenType::NUMBER, Some(Literal::Number(number)));
   }
   fn string(&mut self) {
@@ -216,8 +216,8 @@ impl Scanner {
     self.advance();
 
     //trim quote
-    let value = String::from_utf8(self.source[self.start+1..self.current-1].to_vec()).unwrap();
-    self.add_token_literal(TokenType::STRING, Some(Literal::Str(value)));
+    let value = &self.source[self.start+1..self.current-1];
+    self.add_token_literal(TokenType::STRING, Some(Literal::Str(String::from(value))));
 
   }
 
@@ -225,7 +225,7 @@ impl Scanner {
     if self.scan_finished() {
       return false
     }
-    if self.source[self.current] as char != expected {
+    if self.source.chars().nth(self.current) != Some(expected) {
       return false;
     }
     self.current += 1;
@@ -237,10 +237,10 @@ impl Scanner {
   }
 
   fn add_token_literal(&mut self, token_type: TokenType, literal: Option<Literal>) {
-    let text = self.source[self.start..self.current].to_vec();
+    let text = &self.source[self.start..self.current];
     self.tokens.push(Token {
       token_type: token_type,
-      lexeme: text,
+      lexeme: String::from(text),
       literal: literal,
       line: self.line 
     })
@@ -248,21 +248,21 @@ impl Scanner {
 
   fn advance(&mut self) -> char {
     self.current += 1;
-    return self.source[self.current-1] as char;
+    return self.source.chars().nth(self.current-1).unwrap();
   }
 
   fn peek(&self) -> char {
     if self.scan_finished() {
       return '\0'
     }
-    return self.source[self.current] as char;
+    return self.source.chars().nth(self.current).unwrap();
   }
 
   fn peek_next(&self) -> char {
     if self.current + 1 >= self.source.len() {
       return '\0'
     }
-    return self.source[self.current + 1] as char;
+    return self.source.chars().nth(self.current+1).unwrap();
   }
 
 
