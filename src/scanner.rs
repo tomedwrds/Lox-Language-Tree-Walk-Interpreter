@@ -91,13 +91,47 @@ pub struct Scanner {
   pub keywords: HashMap<String, TokenType>
 }
 
-impl Scanner {
-  // pub fn print_file(&self) {
-  //   print!("{}",self.source);
-  // }
+pub fn scan_tokens(input: String) {
+  let mut scanner: Scanner = Default::default();
 
-  pub fn scan_tokens(&mut self) {
-    
+  scanner.scan_tokens(input);
+
+}
+
+impl Default for Scanner {
+  fn default() -> Scanner {
+      Scanner {
+        source: String::new(),
+        tokens: Vec::new(),
+        current: 0,
+        start: 0,
+        line: 1,
+        keywords: HashMap::from([
+            (String::from("and"), TokenType::AND),
+            (String::from("class"), TokenType::CLASS),
+            (String::from("else"), TokenType::ELSE),
+            (String::from("false"), TokenType::FALSE),
+            (String::from("for"), TokenType::FOR),
+            (String::from("fun"), TokenType::FUN),
+            (String::from("if"), TokenType::IF),
+            (String::from("nil"), TokenType::NIL),
+            (String::from("or"), TokenType::OR),
+            (String::from("print"), TokenType::PRINT),
+            (String::from("return"), TokenType::RETURN),
+            (String::from("super"), TokenType::SUPER),
+            (String::from("this"), TokenType::THIS),
+            (String::from("true"), TokenType::TRUE),
+            (String::from("var"), TokenType::VAR),
+            (String::from("while"), TokenType::WHILE),
+        ])
+      }
+  }
+}
+
+impl Scanner {
+
+  fn scan_tokens(&mut self, input: String) {
+    self.source = input;
     while !self.scan_finished() {
       self.start = self.current;
       self.scan_token();
