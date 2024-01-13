@@ -1,4 +1,4 @@
-use std::{str, collections::HashMap};
+use std::collections::HashMap;
 use std::fmt;
 #[derive(Copy, Clone, Debug)]
 pub enum TokenType {
@@ -63,6 +63,7 @@ pub struct Token {
   literal: Option<Literal>,
   line: usize
 }
+
 impl fmt::Display for Token {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
       write!(
@@ -76,11 +77,6 @@ impl fmt::Display for Token {
   }
 }
 
-impl Token {
-  pub fn print_token(&self) -> &str {
-    "Token"
-  }
-}
 
 pub struct Scanner {
   pub source: String,
@@ -91,11 +87,12 @@ pub struct Scanner {
   pub keywords: HashMap<String, TokenType>
 }
 
-pub fn scan_tokens(input: String) {
+pub fn scan(input: String) -> Scanner {
   let mut scanner: Scanner = Default::default();
 
   scanner.scan_tokens(input);
 
+  return scanner;
 }
 
 impl Default for Scanner {
@@ -130,16 +127,18 @@ impl Default for Scanner {
 
 impl Scanner {
 
+  pub fn display_tokens(self) {
+    for t in self.tokens.iter() {
+      print!("{}",t);
+    }
+  }
+
   fn scan_tokens(&mut self, input: String) {
     self.source = input;
     while !self.scan_finished() {
       self.start = self.current;
       self.scan_token();
     }
-    for t in self.tokens.iter() {
-      print!("{}",t);
-    }
-    
   }
   fn scan_token (&mut self) {
     let _char = self.advance();
