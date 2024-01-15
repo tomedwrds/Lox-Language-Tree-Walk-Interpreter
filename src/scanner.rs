@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum TokenType {
   // Single-character tokens.
   LEFT_PAREN,
@@ -51,16 +51,16 @@ pub enum TokenType {
   EOF
 }
 #[derive(Debug, Clone)]
-enum Literal {
+pub enum Literal {
   Str(String),
   Number(f64)
 }
 
 #[derive(Clone)]
 pub struct Token {
-  token_type: TokenType,
+  pub token_type: TokenType,
   lexeme: String,
-  literal: Option<Literal>,
+  pub literal: Option<Literal>,
   line: usize
 }
 
