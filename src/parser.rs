@@ -139,4 +139,19 @@ impl Parser {
         return self.tokens[self.current -1]
     }
 
+    fn cosume(self, token_type: TokenType, message: String) {
+        if self.check(token_type) {
+            return self.advance()
+        }
+        panic!(message)
+    }
+
+    fn error(self, token: Token, message: String) {
+        if token.token_type == TokenType::EOF {
+            println!("{} at end {}", token.line, message);
+        } else {
+            println!("{} at '{}' {}", token.line, token.lexeme, message);
+        }
+    }
+
 }
