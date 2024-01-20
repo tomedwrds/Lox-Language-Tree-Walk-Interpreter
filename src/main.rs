@@ -10,9 +10,11 @@ fn main() {
     if arg.len() == 1 {
         //run prompt left for now
     } else {
-        run_file(&arg[2])
+        let file = String::from("src/test.lox");
+        run_file(&file);
     }
-    
+    let file = String::from("src/test.lox");
+    run_file(&file);
    
 }
 
@@ -22,4 +24,6 @@ fn run_file(file_path: &String) {
     
     let scanner = scanner::scan(contents);
     scanner.display_tokens();
+    let parser = parser::parse(scanner.tokens);
+    print!("{}",parser)
 }

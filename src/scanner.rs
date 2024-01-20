@@ -127,7 +127,7 @@ impl Default for Scanner {
 
 impl Scanner {
 
-  pub fn display_tokens(self) {
+  pub fn display_tokens(&self) {
     for t in self.tokens.iter() {
       print!("{}",t);
     }

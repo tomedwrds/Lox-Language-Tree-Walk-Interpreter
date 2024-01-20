@@ -1,9 +1,22 @@
+use std::error::Error;
+
 use crate::expr::{Expr, Literal};
 use crate::scanner::{Token, TokenType, self, Scanner};
 
 struct Parser {
     tokens: Vec<Token>,
     current: usize
+}
+enum ParseError {
+    Default
+}
+
+pub fn parse(tokens: Vec<Token>) -> Expr {
+    let mut parser = Parser {
+        tokens,
+        current: 0
+    };
+    parser.expression()
 }
 
 impl Parser {
@@ -15,7 +28,7 @@ impl Parser {
         let mut expr: Expr = self.comparison();
 
         while self.token_match(vec![TokenType::BANG_EQUAL, TokenType::EQUAL_EQUAL]) {
-            let operator: Token = self.previous();
+            let operator = self.previous().clone();
             let right =  Box::new(self.comparison());
             let left: Box<Expr> = Box::new(expr);
             expr = Expr::Binary(left, operator, right);
@@ -28,7 +41,7 @@ impl Parser {
         let mut expr: Expr = self.term();
 
         while self.token_match(vec![TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL]) {
-            let operator: Token = self.previous();
+            let operator = self.previous().clone();
             let right = Box::new(self.term());
             let left: Box<Expr> = Box::new(expr);
             expr = Expr::Binary(left, operator, right)
@@ -41,7 +54,7 @@ impl Parser {
         let mut expr: Expr = self.factor();
 
         while self.token_match(vec![TokenType::MINUS, TokenType::PLUS]) {
-            let operator: Token = self.previous();
+            let operator = self.previous().clone();
             let right = Box::new(self.factor());
             let left: Box<Expr> = Box::new(expr);
             expr = Expr::Binary(left, operator, right)
@@ -54,7 +67,7 @@ impl Parser {
         let mut expr: Expr = self.unary();
 
         while self.token_match(vec![TokenType::SLASH, TokenType::STAR]) {
-            let operator: Token = self.previous();
+            let operator = self.previous().clone();
             let right = Box::new(self.unary());
             let left: Box<Expr> = Box::new(expr);
             expr = Expr::Binary(left, operator, right)
@@ -65,14 +78,14 @@ impl Parser {
 
     fn unary(&mut self) -> Expr {
         if self.token_match(vec![TokenType::BANG, TokenType::MINUS]) {
-            let operator: Token = self.previous();
+            let operator = self.previous().clone();
             let right = Box::new(self.unary());
             return Expr::Unary(operator, right);
         }
         return self.primary()
     }
 
-    fn primary(self) -> Expr {
+    fn primary(&mut self) -> Expr {
         if self.token_match(vec![TokenType::FALSE]) { 
             return Expr::Literal(Literal::False)
         }
@@ -83,7 +96,7 @@ impl Parser {
             return Expr::Literal(Literal::Nil) 
         }
         if self.token_match(vec![TokenType::NUMBER, TokenType::STRING]) { 
-            let literal = self.previous().literal;
+            let literal = self.previous().clone().literal;
             match literal {
                 Some(literal_type) => match literal_type {
                     scanner::Literal::Str(str) => return Expr::Literal(Literal::String(str)),
@@ -112,7 +125,7 @@ impl Parser {
         return false;
     }
 
-    fn check(self, token_type: TokenType) -> bool {
+    fn check(&self, token_type: TokenType) -> bool {
         if self.is_at_end() {
             return false
         } else {
@@ -120,35 +133,40 @@ impl Parser {
         }
     }
 
-    fn advance(& mut self) -> Token {
+    fn advance(&mut self) -> &Token {
         if !self.is_at_end()  {
             self.current += 1;
         }
         return self.previous();
     }
 
-    fn is_at_end(self) -> bool {
-        return self.peek().token_type == TokenType::EOF;
+    fn is_at_end(&self) -> bool {
+        //TODO: return this to having EOF with full EOF token
+        return self.current == self.tokens.len() //self.peek().token_type == TokenType::EOF;
     }
 
-    fn peek(self) -> Token {
-        return self.tokens[self.current];
+    fn peek(&self) -> &Token {
+        return &self.tokens[self.current];
     }
 
-    fn previous(self) -> Token {
-        return self.tokens[self.current -1]
+    fn previous(&self) -> &Token {
+        return &self.tokens[self.current -1]
     }
 
-    fn cosume(self, token_type: TokenType, message: String) {
+    fn consume(&mut self, token_type: TokenType, message: &str) -> Result<&Token, ParseError> {
         if self.check(token_type) {
-            return self.advance()
+            return Ok(self.advance())
         }
-        panic!(message)
+
+        // if let Some(next_token) = self.peek() {
+        //     self.error_message(next_token, message)
+        // } 
+        Err(ParseError::Default)
     }
 
-    fn error(self, token: Token, message: String) {
+    fn error_message(self, token: &Token, message: &str) {
         if token.token_type == TokenType::EOF {
-            println!("{} at end {}", token.line, message);
+            println!("{} at end {}", token.line, message)
         } else {
             println!("{} at '{}' {}", token.line, token.lexeme, message);
         }

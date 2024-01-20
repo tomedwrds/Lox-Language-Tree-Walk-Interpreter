@@ -1,2 +1,1 @@
-var test1 = 10;
-var test2 = "hello";
+5 + 10 + -(3)
