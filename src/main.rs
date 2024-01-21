@@ -1,8 +1,12 @@
 use std::env;
 use std::fs;
+
+use crate::interpreter::interpret;
 mod scanner;
 mod expr;
 mod parser;
+mod interpreter;
+
 
 fn main() {
     let arg: Vec<String> = env::args().collect();
@@ -25,5 +29,6 @@ fn run_file(file_path: &String) {
     let scanner = scanner::scan(contents);
     scanner.display_tokens();
     let parser = parser::parse(scanner.tokens);
-    print!("{}",parser)
+    let interpreter = interpret(parser);
+    print!("{:?}",interpreter);
 }
