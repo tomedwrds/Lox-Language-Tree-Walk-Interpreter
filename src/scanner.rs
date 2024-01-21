@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use std::collections::HashMap;
 use std::fmt;
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -50,13 +53,13 @@ pub enum TokenType {
 
   EOF
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
   Str(String),
   Number(f64)
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Token {
   pub token_type: TokenType,
   pub lexeme: String,
@@ -182,7 +185,7 @@ impl Scanner {
           TokenType::LESS
         })}, 
       '/' => {
-        let matches_eq = self._match('=');
+        let matches_eq = self._match('/');
         if matches_eq {
           //Read comment
           while self.peek() != '\n' && !self.scan_finished() {
