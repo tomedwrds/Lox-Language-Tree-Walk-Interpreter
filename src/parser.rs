@@ -2,6 +2,7 @@ use std::error::Error;
 
 use crate::expr::{Expr, Literal};
 use crate::scanner::{Token, TokenType, self, Scanner};
+use crate::stmt::Stmt;
 
 struct Parser {
     tokens: Vec<Token>,
@@ -11,15 +12,39 @@ enum ParseError {
     Default
 }
 
-pub fn parse(tokens: Vec<Token>) -> Expr {
+pub fn parse(tokens: Vec<Token>) -> Vec<Stmt> {
+    let mut statements: Vec<Stmt> = vec![];
     let mut parser = Parser {
         tokens,
         current: 0
     };
-    parser.expression()
+    while !parser.is_at_end() {
+        statements.push(parser.statement())
+    }
+    return statements
 }
 
 impl Parser {
+    fn statement(&mut self) -> Stmt {
+        if self.token_match(vec![TokenType::PRINT]) {
+            return self.print_statement();
+        } else {
+            return self.expression_statement();
+        }
+    }
+
+    fn print_statement(&mut self) -> Stmt {
+        let expr = self.expression();
+        self.consume(TokenType::SEMICOLON, "Expect ';' after value.");
+        return Stmt::Print(expr);
+    }
+
+    fn expression_statement(&mut self) -> Stmt {
+        let expr = self.expression();
+        self.consume(TokenType::SEMICOLON, "Expect ';' after expression.");
+        return Stmt::Expression(expr);
+    }
+
     fn expression(&mut self) -> Expr {
         return self.equailty();
     }
@@ -142,7 +167,7 @@ impl Parser {
 
     fn is_at_end(&self) -> bool {
         //TODO: return this to having EOF with full EOF token
-        return self.current == self.tokens.len() //self.peek().token_type == TokenType::EOF;
+        return self.peek().token_type == TokenType::EOF;
     }
 
     fn peek(&self) -> &Token {

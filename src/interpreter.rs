@@ -1,4 +1,4 @@
-use crate::{expr::{Expr, Literal}, scanner::{Token, TokenType}};
+use crate::{expr::{Expr, Literal}, scanner::{Token, TokenType}, stmt::Stmt};
 #[derive(Debug, PartialEq)]
 pub enum Value {
     Number(f64),
@@ -8,11 +8,31 @@ pub enum Value {
 }
 mod tests;
 
+pub fn interpret(statements: Vec<Stmt>) {
+    for statement in statements.iter() {
+        interpret_statement(statement.clone());
+    }
+}
 
+fn interpret_statement(stmt: Stmt)  {
+    match stmt {
+        Stmt::Expression(e) => interpret_statement_expression(e),
+        Stmt::Print(e) => interpret_statement_print(e)
+    }
+}
 
-pub fn interpret(expr: Expr) -> Result<Value, String> {
+fn interpret_statement_expression(expr: Expr)  {
+    let value = interpret_expression(expr);
+}
+
+fn interpret_statement_print(expr: Expr)  {
+    let value = interpret_expression(expr).unwrap();
+    print!("{:?}", value);
+}
+
+fn interpret_expression(expr: Expr) -> Result<Value, String> {
     match expr {
-        Expr::Grouping(e) => interpret(*e),
+        Expr::Grouping(e) => interpret_expression(*e),
         Expr::Unary(o, e) => interpret_unary(o, *e),
         Expr::Binary(l, o, r) => interpret_binary(*l, o, *r),
         Expr::Literal(l) => Ok(interpret_literal(l))
@@ -30,8 +50,8 @@ fn interpret_literal(literal: Literal) -> Value {
 }
 
 fn interpret_binary(left: Expr, operator: Token, right: Expr) -> Result<Value, String> {
-    let value_left = interpret(left)?;
-    let value_right = interpret(right)?;
+    let value_left = interpret_expression(left)?;
+    let value_right = interpret_expression(right)?;
     match (value_left, operator.token_type, value_right) {
         //Arithmetic
         (Value::Number(l), TokenType::MINUS, Value::Number(r)) => Ok(Value::Number(l-r)),
@@ -61,7 +81,7 @@ fn interpret_binary(left: Expr, operator: Token, right: Expr) -> Result<Value, S
 }
 
 fn interpret_unary(operator: Token, expr: Expr) -> Result<Value, String> {
-    let value = interpret(expr)?;
+    let value = interpret_expression(expr)?;
     match operator.token_type {
         TokenType::MINUS => match value {
             Value::Number(n) => Ok(Value::Number(-n)),

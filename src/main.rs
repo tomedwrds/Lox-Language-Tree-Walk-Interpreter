@@ -6,7 +6,7 @@ mod scanner;
 mod expr;
 mod parser;
 mod interpreter;
-
+mod stmt;
 
 fn main() {
     let arg: Vec<String> = env::args().collect();
@@ -29,6 +29,5 @@ fn run_file(file_path: &String) {
     let scanner = scanner::scan(contents);
     scanner.display_tokens();
     let parser = parser::parse(scanner.tokens);
-    let interpreter = interpret(parser);
-    print!("{:?}",interpreter);
+    let _interpreter = interpret(parser);
 }

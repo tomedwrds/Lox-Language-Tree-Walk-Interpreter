@@ -1,14 +1,14 @@
 use crate::scanner;
 use std::fmt::{self, Binary};
 
-
+#[derive(Clone)]
 pub enum Expr {
     Binary(Box<Expr>, scanner::Token, Box<Expr>),
     Grouping(Box<Expr>),
     Literal(Literal),
     Unary(scanner::Token, Box<Expr>)
 }
-
+#[derive(Clone)]
 pub enum Literal {
     True,
     False,

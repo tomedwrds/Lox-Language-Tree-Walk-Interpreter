@@ -141,6 +141,7 @@ impl Scanner {
       self.start = self.current;
       self.scan_token();
     }
+    self.add_token(TokenType::EOF)
   }
   fn scan_token (&mut self) {
     let _char = self.advance();
@@ -272,7 +273,10 @@ impl Scanner {
   }
 
   fn add_token_literal(&mut self, token_type: TokenType, literal: Option<Literal>) {
-    let text = &self.source[self.start..self.current];
+    let mut text = &self.source[self.start..self.current];
+    if token_type == TokenType::EOF {
+      text = "EOF"
+    }
     self.tokens.push(Token {
       token_type: token_type,
       lexeme: String::from(text),
