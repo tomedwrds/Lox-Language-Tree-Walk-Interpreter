@@ -1,16 +1,37 @@
-use crate::{expr::{Expr, Literal}, scanner::{Token, TokenType}, stmt::Stmt};
-#[derive(Debug, PartialEq)]
+use std::collections::HashMap;
+
+use crate::{enviroment::Enviroment, expr::{Expr, Literal}, scanner::{Token, TokenType}, stmt::Stmt};
+#[derive(Debug, PartialEq, Clone)]
 pub enum Value {
     Number(f64),
     String(String),
     Bool(bool),
     Nil,
 }
+
+pub enum RuntimeError {
+    Variable(Token, String)
+}
 mod tests;
 
+struct Interpreter {
+    enviroment: Enviroment,
+}
+
 pub fn interpret(statements: Vec<Stmt>) {
-    for statement in statements.iter() {
-        interpret_statement(statement.clone());
+    let interpreter = Interpreter {
+        enviroment: Enviroment {
+            values: HashMap::new()
+        }
+    };
+    interpreter.interpret(statements);
+}
+
+impl Interpreter {
+    pub fn interpret(statements: Vec<Stmt>) {
+        for statement in statements.iter() {
+            interpret_statement(statement.clone());
+        }
     }
 }
 

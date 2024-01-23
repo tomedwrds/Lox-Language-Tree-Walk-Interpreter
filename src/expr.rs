@@ -1,12 +1,13 @@
 use crate::scanner;
-use std::fmt::{self, Binary};
+use std::fmt::{self};
 
 #[derive(Clone)]
 pub enum Expr {
     Binary(Box<Expr>, scanner::Token, Box<Expr>),
     Grouping(Box<Expr>),
     Literal(Literal),
-    Unary(scanner::Token, Box<Expr>)
+    Unary(scanner::Token, Box<Expr>),
+    Variable(scanner::Token)
 }
 #[derive(Clone)]
 pub enum Literal {
