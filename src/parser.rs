@@ -9,7 +9,8 @@ struct Parser {
     current: usize
 }
 enum ParseError {
-    Default
+    Default,
+    Assignment
 }
 
 pub fn parse(tokens: Vec<Token>) -> Vec<Stmt> {
@@ -70,7 +71,23 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Result<Expr, ParseError> {
-        return self.equailty();
+        return self.assingment();
+    }
+
+    fn assingment(&mut self) -> Result<Expr, ParseError> {
+        let expr = self.equailty()?;
+        if self.token_match(vec![TokenType::EQUAL]) {
+            let equals = self.previous();
+            let value = self.assingment()?;
+
+            match expr {
+                Expr::Variable(token) => return Ok(Expr::Assign(token, Box::new(value))),
+                _ => {
+                    print!("Invalid assignment target");
+                }
+            }
+        }
+        return Ok(expr);
     }
 
     fn equailty(&mut self) -> Result<Expr, ParseError> {
@@ -209,7 +226,6 @@ impl Parser {
             return Ok(self.advance())
         }
         let problem_token = self.peek();
-        
         if problem_token.token_type == TokenType::EOF {
             println!("{} at end {}", problem_token.line, message)
         } else {
@@ -217,6 +233,7 @@ impl Parser {
         }
         Err(ParseError::Default)
     }
+
 
     fn synchronize(&mut self) {
         self.advance();

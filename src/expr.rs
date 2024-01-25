@@ -1,15 +1,16 @@
-use crate::scanner;
+use crate::scanner::{self, Token};
 use std::fmt::{self};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Expr {
-    Binary(Box<Expr>, scanner::Token, Box<Expr>),
+    Binary(Box<Expr>, Token, Box<Expr>),
     Grouping(Box<Expr>),
     Literal(Literal),
-    Unary(scanner::Token, Box<Expr>),
-    Variable(scanner::Token)
+    Unary(Token, Box<Expr>),
+    Variable(Token),
+    Assign(Token, Box<Expr>)
 }
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Literal {
     True,
     False,

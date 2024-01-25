@@ -7,11 +7,11 @@ pub struct Enviroment {
 }
 
 impl Enviroment {
-    fn put(&mut self, name: String, value: Value) {
+    pub fn put(&mut self, name: String, value: Value) {
         self.values.insert(name, value);
     }
 
-    fn get(self, token: Token) -> Result<Value, RuntimeError> {
+    pub fn get(&mut self, token: Token) -> Result<Value, RuntimeError> {
         if let Some(value) = self.values.get(&token.lexeme) {
             Ok(value.clone())
         } else {
