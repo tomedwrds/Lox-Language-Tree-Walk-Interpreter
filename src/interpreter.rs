@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{enviroment::Enviroment, expr::{Expr, Literal}, scanner::{Token, TokenType}, stmt::Stmt};
+use crate::{enviroment::{create_enviroment, Enviroment}, expr::{Expr, Literal}, scanner::{Token, TokenType}, stmt::Stmt};
 #[derive(Debug, PartialEq, Clone)]
 pub enum Value {
     Number(f64),
@@ -22,9 +22,7 @@ struct Interpreter {
 
 pub fn interpret(statements: Vec<Stmt>) {
     let mut interpreter = Interpreter {
-        enviroment: Enviroment {
-            values: HashMap::new()
-        }
+        enviroment: create_enviroment()
     };
     interpreter.interpret(statements);
 }
@@ -69,8 +67,15 @@ impl Interpreter {
             Expr::Unary(o, e) => self.interpret_unary(o, *e),
             Expr::Binary(l, o, r) => self.interpret_binary(*l, o, *r),
             Expr::Literal(l) => Ok(self.interpret_literal(l)),
-            Expr::Variable(t) => self.interpret_expression_variable(t)
+            Expr::Variable(t) => self.interpret_expression_variable(t),
+            Expr::Assign(t, e) => self.interpret_expression_assignment(t, *e)
         }
+    }
+
+    fn interpret_expression_assignment(&mut self, token: Token, expr: Expr) -> Result<Value, RuntimeError> {
+        let value = self.interpret_expression(expr)?;
+        let _ = self.enviroment.assign(token, &value);
+        return Ok(value);
     }
     
     fn interpret_expression_variable(&mut self, token: Token) -> Result<Value, RuntimeError> {

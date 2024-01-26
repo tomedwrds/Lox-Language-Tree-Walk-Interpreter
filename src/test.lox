@@ -1,2 +1,3 @@
 var dick = "!24125125@";
+dick = 12421
 print dick;

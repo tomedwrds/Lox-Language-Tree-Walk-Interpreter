@@ -60,7 +60,7 @@ impl Parser {
 
     fn print_statement(&mut self) -> Result<Stmt, ParseError> {
         let expr = self.expression()?;
-        self.consume(TokenType::SEMICOLON, "Expect ';' after value.");
+        self.consume(TokenType::SEMICOLON, "Expect ';' after print.");
         return Ok(Stmt::Print(expr));
     }
 
@@ -227,9 +227,9 @@ impl Parser {
         }
         let problem_token = self.peek();
         if problem_token.token_type == TokenType::EOF {
-            println!("{} at end {}", problem_token.line, message)
+            println!("Line {} at end {}", problem_token.line, message)
         } else {
-            println!("{} at '{}' {}", problem_token.line, problem_token.lexeme, message);
+            println!("Line {} at '{}' {}", problem_token.line, problem_token.lexeme, message);
         }
         Err(ParseError::Default)
     }
