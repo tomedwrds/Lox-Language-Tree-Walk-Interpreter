@@ -2,15 +2,19 @@ use std::collections::HashMap;
 
 use crate::{interpreter::{RuntimeError, Value}, scanner::Token};
 
+#[derive(Clone)]
 pub struct Enviroment {
     pub values: HashMap<String, Value>,
     enclosing: Option<Box<Enviroment>>
 }
 
-pub fn create_enviroment() -> Enviroment {
+pub fn create_enviroment(enclosing: Option<Enviroment>) -> Enviroment {
     Enviroment {
         values: HashMap::new(),
-        enclosing: None
+        enclosing: match enclosing {
+            Some(env) => Some(Box::new(env)),
+            None => None
+        }
     }
 }
 
@@ -27,7 +31,7 @@ impl Enviroment {
         if let Some(value) = self.values.get(&token.lexeme) {
             Ok(value.clone())
         } else if let Some(env) = &self.enclosing {
-            if let Some(value) = (*env).values.get(&token.lexeme) {
+            if let Ok(value) = (*env.clone()).get(token.clone()) {
                 Ok(value.clone())
             }  else {
                 Err(RuntimeError::Variable(token.clone(), format!("Undefined variable '{:?}'.", token.lexeme)))

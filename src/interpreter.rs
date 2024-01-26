@@ -22,7 +22,7 @@ struct Interpreter {
 
 pub fn interpret(statements: Vec<Stmt>) {
     let mut interpreter = Interpreter {
-        enviroment: create_enviroment()
+        enviroment: create_enviroment(None)
     };
     interpreter.interpret(statements);
 }
@@ -36,12 +36,23 @@ impl Interpreter {
 
     fn interpret_statement(&mut self, stmt: Stmt)  {
         match stmt {
+            Stmt::Block(ve) => self.interpret_statement_block(ve, create_enviroment(Some(self.enviroment.clone()))),
             Stmt::Expression(e) => self.interpret_statement_expression(e),
             Stmt::Print(e) => self.interpret_statement_print(e),
             Stmt::Var(t, e) => self.interpret_statement_variable(t, e),
         }
     }
     
+    fn interpret_statement_block(&mut self, stmts: Vec<Stmt>, env: Enviroment) {
+        let previous = self.enviroment.clone();
+        self.enviroment = env;
+
+        for stmt in stmts {
+            self.interpret_statement(stmt);
+        }
+        self.enviroment = previous;
+    }
+
     fn interpret_statement_variable(&mut self, token: Token, expr: Expr)  {
         let mut value = Value::Nil;
         if expr != Expr::Literal(Literal::Nil) {
@@ -58,7 +69,7 @@ impl Interpreter {
     fn interpret_statement_print(&mut self, expr: Expr)  {
         ///TODO better error handling
         let value = self.interpret_expression(expr).unwrap();
-        print!("{:?}", value);
+        print!("{:?}\n", value);
     }
     
     fn interpret_expression(&mut self, expr: Expr) -> Result<Value, RuntimeError> {
