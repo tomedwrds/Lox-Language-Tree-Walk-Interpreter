@@ -41,9 +41,24 @@ impl Interpreter {
             Stmt::Expression(e) => self.interpret_statement_expression(e),
             Stmt::Print(e) => self.interpret_statement_print(e),
             Stmt::Var(t, e) => self.interpret_statement_variable(t, e),
+            Stmt::While(e, s) => self.interpret_statement_while(e, *s),
         }
     }
 
+    fn interpret_statement_while(&mut self, condition: Expr, stmt: Stmt) {
+        while self.is_truth(condition.clone()) {
+            self.interpret_statement(stmt.clone())
+        } 
+    }
+
+    fn is_truth(&mut self, expr: Expr) -> bool {
+        let value = self.interpret_expression(expr).unwrap();
+        if let Value::Bool(bool_expr) = value {
+            return bool_expr
+        } else {
+            return false
+        }
+    }
     fn intepret_statement_if(&mut self, condition: Expr, if_stmt: Stmt, else_stmt: Option<Box<Stmt>>) {
         let eval_condition = self.interpret_expression(condition).unwrap();
         if let Value::Bool(bool_eval_condition) = eval_condition {

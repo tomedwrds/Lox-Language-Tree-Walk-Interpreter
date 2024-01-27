@@ -51,6 +51,8 @@ impl Parser {
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         if self.token_match(vec![TokenType::PRINT]) {
             return self.print_statement();
+        } else if self.token_match(vec![TokenType::WHILE]) {
+            return self.while_statement(); 
         } else if self.token_match(vec![TokenType::LEFT_BRACE]) {
             return Ok(Stmt::Block(self.block_statement()?)); 
         } else if self.token_match(vec![TokenType::IF]) {
@@ -61,9 +63,9 @@ impl Parser {
     }
 
     fn if_statement(&mut self) -> Result<Stmt, ParseError> {
-        self.consume(TokenType::LEFT_PAREN, "Expect '(' fater 'if'.");
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
         let condition = self.expression()?;
-        self.consume(TokenType::RIGHT_PAREN, "Expect ')' fater if condition.");
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
 
         let then_branch = self.statement()?;
         let mut else_branch = None;
@@ -72,6 +74,16 @@ impl Parser {
         }
 
         return Ok(Stmt::If(condition, Box::new(then_branch), else_branch))
+    }
+
+    fn while_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
+        let condition = self.expression()?;
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.");
+
+        let body = self.statement()?;
+
+        return Ok(Stmt::While(condition, Box::new(body)))
     }
 
     fn print_statement(&mut self) -> Result<Stmt, ParseError> {

@@ -1,6 +1,7 @@
-var a = 100;
-var b = 20;
-if (a != b and (true or false) and false) 
-    print "tes";
-else
-    print "non";
+var i = 1;
+while (i < 100) 
+{
+    print "test";
+    i = 3;
+    print i;
+}
