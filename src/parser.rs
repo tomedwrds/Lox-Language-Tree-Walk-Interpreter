@@ -103,7 +103,7 @@ impl Parser {
     }
 
     fn assingment(&mut self) -> Result<Expr, ParseError> {
-        let expr = self.equailty()?;
+        let expr = self.or()?;
         if self.token_match(vec![TokenType::EQUAL]) {
             let equals = self.previous();
             let value = self.assingment()?;
@@ -114,6 +114,28 @@ impl Parser {
                     print!("Invalid assignment target");
                 }
             }
+        }
+        return Ok(expr);
+    }
+
+    fn or(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.and()?;
+
+        while self.token_match(vec![TokenType::OR]) {
+            let operator = self.previous().clone();
+            let right = self.and()?;
+            expr = Expr::Logical(Box::new(expr), operator.clone(), Box::new(right));
+        }
+        return Ok(expr);
+    }
+
+    fn and(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.equailty()?;
+
+        while self.token_match(vec![TokenType::AND]) {
+            let operator = self.previous().clone();
+            let right = self.equailty()?;
+            expr = Expr::Logical(Box::new(expr), operator.clone(), Box::new(right));
         }
         return Ok(expr);
     }

@@ -1,6 +1,6 @@
 var a = 100;
 var b = 20;
-if (a == b) 
+if (a != b and (true or false) and false) 
     print "tes";
 else
     print "non";

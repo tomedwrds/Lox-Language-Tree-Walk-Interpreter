@@ -93,8 +93,27 @@ impl Interpreter {
             Expr::Binary(l, o, r) => self.interpret_binary(*l, o, *r),
             Expr::Literal(l) => Ok(self.interpret_literal(l)),
             Expr::Variable(t) => self.interpret_expression_variable(t),
-            Expr::Assign(t, e) => self.interpret_expression_assignment(t, *e)
+            Expr::Assign(t, e) => self.interpret_expression_assignment(t, *e),
+            Expr::Logical(l, o, r) => self.interpret_expression_logical(*l, o, *r)
         }
+    }
+
+    fn interpret_expression_logical(&mut self, left: Expr, operator: Token, right: Expr) -> Result<Value, RuntimeError> {
+        let left = self.interpret_expression(left)?;
+        if operator.token_type == TokenType::OR {
+            if let Value::Bool(left_val) = left {
+                if left_val {
+                    return Ok(left);
+                }
+            }
+        } else {
+            if let Value::Bool(left_val) = left {
+                if !left_val {
+                    return Ok(left);
+                }
+            }
+        }
+        return self.interpret_expression(right);
     }
 
     fn interpret_expression_assignment(&mut self, token: Token, expr: Expr) -> Result<Value, RuntimeError> {
