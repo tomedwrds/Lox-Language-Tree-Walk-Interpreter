@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use crate::expr::{Expr, Literal};
 use crate::scanner::{Token, TokenType, self, Scanner};
 use crate::stmt::Stmt;
@@ -55,9 +53,25 @@ impl Parser {
             return self.print_statement();
         } else if self.token_match(vec![TokenType::LEFT_BRACE]) {
             return Ok(Stmt::Block(self.block_statement()?)); 
+        } else if self.token_match(vec![TokenType::IF]) {
+            return self.if_statement(); 
         } else {
             return self.expression_statement();
         }
+    }
+
+    fn if_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' fater 'if'.");
+        let condition = self.expression()?;
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' fater if condition.");
+
+        let then_branch = self.statement()?;
+        let mut else_branch = None;
+        if self.token_match(vec![TokenType::ELSE]) {
+            else_branch = Some(Box::new(self.statement()?));
+        }
+
+        return Ok(Stmt::If(condition, Box::new(then_branch), else_branch))
     }
 
     fn print_statement(&mut self) -> Result<Stmt, ParseError> {

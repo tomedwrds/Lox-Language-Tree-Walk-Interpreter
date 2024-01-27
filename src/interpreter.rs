@@ -37,9 +37,23 @@ impl Interpreter {
     fn interpret_statement(&mut self, stmt: Stmt)  {
         match stmt {
             Stmt::Block(ve) => self.interpret_statement_block(ve, create_enviroment(Some(self.enviroment.clone()))),
+            Stmt::If(c,i ,e) => self.intepret_statement_if(c, *i, e),
             Stmt::Expression(e) => self.interpret_statement_expression(e),
             Stmt::Print(e) => self.interpret_statement_print(e),
             Stmt::Var(t, e) => self.interpret_statement_variable(t, e),
+        }
+    }
+
+    fn intepret_statement_if(&mut self, condition: Expr, if_stmt: Stmt, else_stmt: Option<Box<Stmt>>) {
+        let eval_condition = self.interpret_expression(condition).unwrap();
+        if let Value::Bool(bool_eval_condition) = eval_condition {
+            if bool_eval_condition {
+                self.interpret_statement(if_stmt)
+            } else if let Some(else_stmt_defined) = else_stmt {
+                self.interpret_statement(*else_stmt_defined)
+            }
+        } else {
+            print!("If statement cannot evaluate non boolean expression")
         }
     }
     
