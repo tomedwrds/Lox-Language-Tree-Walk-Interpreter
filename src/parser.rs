@@ -43,7 +43,7 @@ impl Parser {
             intitalizer = self.expression()?;
         }
 
-        self.consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+        self.consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.")?;
         return Ok(Stmt::Var(token, intitalizer));
 
     }
@@ -53,6 +53,8 @@ impl Parser {
             return self.print_statement();
         } else if self.token_match(vec![TokenType::WHILE]) {
             return self.while_statement(); 
+        }  else if self.token_match(vec![TokenType::FOR]) {
+            return self.for_statement(); 
         } else if self.token_match(vec![TokenType::LEFT_BRACE]) {
             return Ok(Stmt::Block(self.block_statement()?)); 
         } else if self.token_match(vec![TokenType::IF]) {
@@ -63,9 +65,9 @@ impl Parser {
     }
 
     fn if_statement(&mut self) -> Result<Stmt, ParseError> {
-        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.")?;
         let condition = self.expression()?;
-        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.")?;
 
         let then_branch = self.statement()?;
         let mut else_branch = None;
@@ -77,18 +79,56 @@ impl Parser {
     }
 
     fn while_statement(&mut self) -> Result<Stmt, ParseError> {
-        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.")?;
         let condition = self.expression()?;
-        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.");
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after condition.")?;
 
         let body = self.statement()?;
 
         return Ok(Stmt::While(condition, Box::new(body)))
     }
 
+    fn for_statement(&mut self) -> Result<Stmt, ParseError> {
+        self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'for'.")?;
+        
+        let mut initializer: Option<Stmt> = None;
+        if self.token_match(vec![TokenType::SEMICOLON]) {
+        } else if self.token_match(vec![TokenType::VAR]) {
+            initializer = Some(self.var_declaration()?);
+        } else {
+            initializer = Some(self.expression_statement()?);
+        }
+
+        let mut condition = Expr::Literal(Literal::True);
+        if !self.token_match(vec![TokenType::SEMICOLON]) {
+            condition = self.expression()?;
+        } 
+        self.consume(TokenType::SEMICOLON, "Expect ';' after loop condition.")?;
+
+        let mut increment: Option<Expr> = None;
+        if !self.token_match(vec![TokenType::RIGHT_PAREN]) {
+            increment = Some(self.expression()?);
+        } 
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after clauses.")?;
+
+        let mut body = self.statement()?;
+
+        if let Some(increment_value) = increment {
+            body = Stmt::Block(vec![body, Stmt::Expression(increment_value)])
+        }
+
+        body = Stmt::While(condition, Box::new(body));
+
+        if let Some(initalizer_value) = initializer {
+            body = Stmt::Block(vec![initalizer_value, body])
+        }
+
+        return Ok(body);
+    }
+
     fn print_statement(&mut self) -> Result<Stmt, ParseError> {
         let expr = self.expression()?;
-        self.consume(TokenType::SEMICOLON, "Expect ';' after print.");
+        self.consume(TokenType::SEMICOLON, "Expect ';' after print.")?;
         return Ok(Stmt::Print(expr));
     }
 
@@ -99,7 +139,7 @@ impl Parser {
             statements.push(self.declaration()?);
         }
 
-        self.consume(TokenType::RIGHT_BRACE, "Except '}' after block.");
+        self.consume(TokenType::RIGHT_BRACE, "Except '}' after block.")?;
         return Ok(statements);
     }
 
