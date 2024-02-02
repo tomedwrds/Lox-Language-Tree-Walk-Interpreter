@@ -1,7 +1,6 @@
-var i = 1;
-while (i < 100) 
-{
-    print "test";
-    i = 3;
-    print i;
+var i = 0;
+while (i <= 100) {
+  print i;
+  i = i + 1;
 }
+

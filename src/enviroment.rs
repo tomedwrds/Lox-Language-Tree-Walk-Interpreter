@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use crate::{interpreter::{RuntimeError, Value}, scanner::Token};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Enviroment {
     pub values: HashMap<String, Value>,
-    enclosing: Option<Box<Enviroment>>
+    pub enclosing: Option<Box<Enviroment>>
 }
 
 pub fn create_enviroment(enclosing: Option<Enviroment>) -> Enviroment {
@@ -42,13 +42,16 @@ impl Enviroment {
 
     }
 
-    pub fn assign(&mut self, token: Token, value: &Value) -> Result<(), RuntimeError> {
-        match self.values.get(&token.lexeme) {
-            Some(v) => {
-                self.values.insert(token.lexeme, value.clone());
-                return Ok(());
-            },
-            None => Err(RuntimeError::Variable(token.clone(), format!("Undefined variable '{:?}'.", token.lexeme)))
+    pub fn assign(&mut self, token: Token, new_value: &Value) -> Result<(), RuntimeError> {
+       
+       if self.values.contains_key(&token.lexeme) {
+            self.values.insert(token.lexeme.clone(), new_value.clone());
+            return Ok(());
+        } 
+
+        match &mut self.enclosing {
+            Some(enclosing) => enclosing.assign(token, new_value),
+            None =>  Err(RuntimeError::Variable(token.clone(), format!("Cannot change undefined variable '{:?}'.", token.lexeme)))
         }
     }
 }

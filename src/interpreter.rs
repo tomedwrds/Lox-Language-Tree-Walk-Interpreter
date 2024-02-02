@@ -16,6 +16,7 @@ pub enum RuntimeError {
 }
 mod tests;
 
+#[derive(Debug)]
 struct Interpreter {
     enviroment: Enviroment,
 }
@@ -73,13 +74,16 @@ impl Interpreter {
     }
     
     fn interpret_statement_block(&mut self, stmts: Vec<Stmt>, env: Enviroment) {
-        let previous = self.enviroment.clone();
         self.enviroment = env;
 
         for stmt in stmts {
             self.interpret_statement(stmt);
         }
-        self.enviroment = previous;
+        if let Some(enclosing) = self.enviroment.enclosing.clone() {
+            self.enviroment = *enclosing
+        } else {
+            panic!("Invalid enviroment");
+        }
     }
 
     fn interpret_statement_variable(&mut self, token: Token, expr: Expr)  {
@@ -133,8 +137,8 @@ impl Interpreter {
 
     fn interpret_expression_assignment(&mut self, token: Token, expr: Expr) -> Result<Value, RuntimeError> {
         let value = self.interpret_expression(expr)?;
-        let _ = self.enviroment.assign(token, &value);
-        return Ok(value);
+        self.enviroment.assign(token, &value)?;
+        Ok(value)
     }
     
     fn interpret_expression_variable(&mut self, token: Token) -> Result<Value, RuntimeError> {
