@@ -4,6 +4,7 @@ use std::fmt::{self};
 #[derive(Clone, PartialEq)]
 pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
+    Call(Box<Expr>, Token, Vec<Expr>),
     Grouping(Box<Expr>),
     Literal(Literal),
     Logical(Box<Expr>, Token, Box<Expr>),

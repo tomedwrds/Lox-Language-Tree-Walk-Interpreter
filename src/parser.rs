@@ -250,7 +250,38 @@ impl Parser {
             let right = Box::new(self.unary()?);
             return Ok(Expr::Unary(operator, right));
         }
-        return self.primary()
+        return self.call()
+    }
+
+    fn call(&mut self) -> Result<Expr, ParseError> {
+        let mut expr = self.primary()?;
+
+        while true {
+            if self.token_match(vec![TokenType::LEFT_PAREN]) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+        return Ok(expr); 
+    }
+
+    fn finish_call(&mut self, calle: Expr) -> Result<Expr, ParseError> {
+        let mut arguments: Vec<Expr> = vec![];
+
+        if !self.check(TokenType::RIGHT_PAREN) {
+            arguments.push(self.expression()?);
+            while self.token_match(vec![TokenType::COMMA]) {
+                if arguments.len() >= 255 {
+                    self.error_message(self.peek(), "Cant have more than 255 arguments");
+                }
+                arguments.push(self.expression()?);
+            }
+        }
+
+        let paren = self.consume(TokenType::RIGHT_PAREN, "Expect ')' after arguments.")?;
+
+        return Ok(Expr::Call(Box::new(calle), paren.clone(), arguments))
     }
 
     fn primary(&mut self) -> Result<Expr, ParseError> {
@@ -328,12 +359,17 @@ impl Parser {
             return Ok(self.advance())
         }
         let problem_token = self.peek();
-        if problem_token.token_type == TokenType::EOF {
-            println!("Line {} at end {}", problem_token.line, message)
-        } else {
-            println!("Line {} at '{}' {}", problem_token.line, problem_token.lexeme, message);
-        }
+        self.error_message(problem_token, message);
         Err(ParseError::Default)
+
+    }
+
+    fn error_message(&self, token: &Token, message: &str) {
+        if token.token_type == TokenType::EOF {
+            println!("Line {} at end {}", token.line, message)
+        } else {
+            println!("Line {} at '{}' {}", token.line, token.lexeme, message);
+        }
     }
 
 
