@@ -1,9 +1,10 @@
 use crate::{expr::Expr, scanner::Token};
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 
 pub enum Stmt {
     Block(Vec<Stmt>),
     Expression(Expr),
+    Function(Token, Vec<Token>, Vec<Stmt>),
     If(Expr, Box<Stmt>, Option<Box<Stmt>>),
     Print(Expr),
     Var(Token, Expr),

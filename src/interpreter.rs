@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 
-use crate::{enviroment::{create_enviroment, Enviroment}, expr::{Expr, Literal}, scanner::{Token, TokenType}, stmt::Stmt};
-#[derive(Debug, PartialEq, Clone)]
+use crate::{enviroment::{create_enviroment, Enviroment}, expr::{Expr, Literal}, lox_instane::{Callable, LoxCallable, LoxInstance}, scanner::{Token, TokenType}, stmt::Stmt};
+#[derive(PartialEq, Clone, Debug)]
 pub enum Value {
     Number(f64),
     String(String),
     Bool(bool),
     Nil,
+    LoxInstance(LoxInstance)
 }
 
 #[derive(Debug)]
@@ -17,13 +18,16 @@ pub enum RuntimeError {
 mod tests;
 
 #[derive(Debug)]
-struct Interpreter {
+pub struct Interpreter {
     enviroment: Enviroment,
+    pub global: Enviroment
 }
 
 pub fn interpret(statements: Vec<Stmt>) {
+    let global = create_enviroment(None);
     let mut interpreter = Interpreter {
-        enviroment: create_enviroment(None)
+        enviroment: global,
+        global
     };
     interpreter.interpret(statements);
 }
@@ -73,7 +77,7 @@ impl Interpreter {
         }
     }
     
-    fn interpret_statement_block(&mut self, stmts: Vec<Stmt>, env: Enviroment) {
+    pub fn interpret_statement_block(&mut self, stmts: Vec<Stmt>, env: Enviroment) {
         self.enviroment = env;
 
         for stmt in stmts {
@@ -113,8 +117,34 @@ impl Interpreter {
             Expr::Literal(l) => Ok(self.interpret_literal(l)),
             Expr::Variable(t) => self.interpret_expression_variable(t),
             Expr::Assign(t, e) => self.interpret_expression_assignment(t, *e),
-            Expr::Logical(l, o, r) => self.interpret_expression_logical(*l, o, *r)
+            Expr::Logical(l, o, r) => self.interpret_expression_logical(*l, o, *r),
+            Expr::Call(c, p, a) => self.interpret_expression_call(*c, p, a)
         }
+    }
+
+    fn interpret_expression_call(&mut self, call: Expr, paren: Token, arguments: Vec<Expr>) -> Result<Value, RuntimeError> {
+      
+      let function_var = match call {
+        Expr::Variable(token) => self.interpret_expression_variable(token),
+        _ => Err(RuntimeError::Type("Attempting to call functions and classes".to_string()))
+      }?;
+
+      let arguments_interpreted: Vec<Value> = vec![];
+
+      for argument in arguments {
+        arguments_interpreted.push(self.interpret_expression(argument)?);
+      }
+
+      if let Value::LoxInstance(lox_instane) = function_var {
+        if let LoxInstance::LoxFunction(function) = lox_instane {
+            return function.call_function(&self, arguments_interpreted)
+        } else {
+            Err(RuntimeError::Type("Attempting to call functions and classes".to_string()))
+        }
+      } else {
+        Err(RuntimeError::Type("Attempting to call functions and classes".to_string()))
+      }
+    
     }
 
     fn interpret_expression_logical(&mut self, left: Expr, operator: Token, right: Expr) -> Result<Value, RuntimeError> {

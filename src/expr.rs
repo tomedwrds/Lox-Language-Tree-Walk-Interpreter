@@ -1,7 +1,7 @@
 use crate::scanner::{self, Token};
 use std::fmt::{self};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
     Call(Box<Expr>, Token, Vec<Expr>),
@@ -12,7 +12,7 @@ pub enum Expr {
     Variable(Token),
     Assign(Token, Box<Expr>)
 }
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Literal {
     True,
     False,
