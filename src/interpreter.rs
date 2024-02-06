@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{enviroment::{create_enviroment, Enviroment}, expr::{Expr, Literal}, lox_instane::{Callable, LoxCallable, LoxInstance}, scanner::{Token, TokenType}, stmt::Stmt};
+use crate::{enviroment::{create_enviroment, Enviroment}, expr::{Expr, Literal}, lox_instane::{Callable, LoxFunction, LoxInstance}, scanner::{Token, TokenType}, stmt::Stmt};
 #[derive(PartialEq, Clone, Debug)]
 pub enum Value {
     Number(f64),
@@ -13,7 +13,8 @@ pub enum Value {
 #[derive(Debug)]
 pub enum RuntimeError {
     Variable(Token, String),
-    Type(String)
+    Type(String),
+    Function(String)
 }
 mod tests;
 
@@ -26,8 +27,8 @@ pub struct Interpreter {
 pub fn interpret(statements: Vec<Stmt>) {
     let global = create_enviroment(None);
     let mut interpreter = Interpreter {
-        enviroment: global,
-        global
+        enviroment: global.clone(),
+        global: global
     };
     interpreter.interpret(statements);
 }
@@ -44,6 +45,7 @@ impl Interpreter {
             Stmt::Block(ve) => self.interpret_statement_block(ve, create_enviroment(Some(self.enviroment.clone()))),
             Stmt::If(c,i ,e) => self.intepret_statement_if(c, *i, e),
             Stmt::Expression(e) => self.interpret_statement_expression(e),
+            Stmt::Function(n, p, c) => self.interpret_statement_function(n, p, c),
             Stmt::Print(e) => self.interpret_statement_print(e),
             Stmt::Var(t, e) => self.interpret_statement_variable(t, e),
             Stmt::While(e, s) => self.interpret_statement_while(e, *s),
@@ -102,9 +104,14 @@ impl Interpreter {
     fn interpret_statement_expression(&mut self, expr: Expr)  {
         let value = self.interpret_expression(expr);
     }
+
+    fn interpret_statement_function(&mut self, name: Token, params: Vec<Token>, code: Vec<Stmt>)  {
+        let func = Value::LoxInstance(LoxInstance::LoxFunction(LoxFunction { stmt: Stmt::Function(name.clone(), params, code)  }));
+        self.enviroment.put(name.lexeme, func);
+    }
     
     fn interpret_statement_print(&mut self, expr: Expr)  {
-        ///TODO better error handling
+        //TODO better error handling
         let value = self.interpret_expression(expr).unwrap();
         print!("{:?}\n", value);
     }
@@ -126,21 +133,24 @@ impl Interpreter {
       
       let function_var = match call {
         Expr::Variable(token) => self.interpret_expression_variable(token),
-        _ => Err(RuntimeError::Type("Attempting to call functions and classes".to_string()))
+        _ => Err(RuntimeError::Type("Attempting to call non functions and classes".to_string()))
       }?;
 
-      let arguments_interpreted: Vec<Value> = vec![];
+      let mut arguments_interpreted: Vec<Value> = vec![];
 
       for argument in arguments {
         arguments_interpreted.push(self.interpret_expression(argument)?);
       }
 
       if let Value::LoxInstance(lox_instane) = function_var {
-        if let LoxInstance::LoxFunction(function) = lox_instane {
-            return function.call_function(&self, arguments_interpreted)
+        let LoxInstance::LoxFunction(function) = lox_instane; 
+        let func_arity = function.clone().arity(); 
+        if func_arity == arguments_interpreted.len() {
+            Err(RuntimeError::Function(format!("Expected {} arguments but got {}.",func_arity, arguments_interpreted.len())))
         } else {
-            Err(RuntimeError::Type("Attempting to call functions and classes".to_string()))
-        }
+            return Ok(function.call_function(self, arguments_interpreted))
+        }   
+        
       } else {
         Err(RuntimeError::Type("Attempting to call functions and classes".to_string()))
       }

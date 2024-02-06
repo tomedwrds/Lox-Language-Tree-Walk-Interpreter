@@ -49,7 +49,10 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
-        if self.token_match(vec![TokenType::PRINT]) {
+        if self.token_match(vec![TokenType::FUN]) {
+            self.function_statement("function")
+        }
+        else if self.token_match(vec![TokenType::PRINT]) {
             return self.print_statement();
         } else if self.token_match(vec![TokenType::WHILE]) {
             return self.while_statement(); 
@@ -64,6 +67,24 @@ impl Parser {
         }
     }
 
+    fn function_statement(&mut self, kind: &str) -> Result<Stmt, ParseError> {
+        let token = self.consume(TokenType::IDENTIFIER, &format!("Expect {} name", kind))?;
+        let token_copy = token.clone(); //prevents issue with i/mutable refrences to self
+        let mut params: Vec<Token> = vec![];
+        if !self.check(TokenType::RIGHT_PAREN) {
+            params.push(self.consume(TokenType::IDENTIFIER, "Expect parameter name.")?.clone());
+            while self.token_match(vec![TokenType::COMMA]) {
+                if params.len() >= 255 {
+                    self.error_message(self.peek(), "Can't have more than 255 parameters");
+                }
+                params.push(self.consume(TokenType::IDENTIFIER, "Expect parameter name.")?.clone());
+            }
+        }
+        self.consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters")?;
+        self.consume(TokenType::LEFT_BRACE, &format!("Expect '{}' before {} body.", "{", kind))?;
+        let body = self.block_statement()?;
+        return Ok(Stmt::Function(token_copy, params, body));
+    }
     fn if_statement(&mut self) -> Result<Stmt, ParseError> {
         self.consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.")?;
         let condition = self.expression()?;

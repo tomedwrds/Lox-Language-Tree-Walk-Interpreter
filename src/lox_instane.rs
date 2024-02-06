@@ -7,26 +7,27 @@ pub enum LoxInstance {
 
 pub trait Callable {
     fn arity(self) -> usize;
-    fn call_function(self, interpreter: &Interpreter, arguments: Vec<Value>);
+    fn call_function(self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value;
 }
 
 #[derive(Debug, PartialEq, Clone)]
 
-struct LoxFunction {
-    stmt: Stmt
+pub struct LoxFunction {
+    pub stmt: Stmt
 }
 impl Callable for LoxFunction {
-    fn call_function(self, interpreter: &Interpreter, arguments: Vec<Value>) {
-        let mut enviroment = create_enviroment(Some(interpreter.global));
+    fn call_function(self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
+        let mut enviroment = create_enviroment(Some(interpreter.global.clone()));
         if let Stmt::Function(name, params, body) = self.stmt {
             for i in 0..params.len() {
-                enviroment.put(params[i].lexeme, arguments[i])
+                enviroment.put(params[i].lexeme.clone(), arguments[i].clone())
             }
 
             interpreter.interpret_statement_block(body,enviroment);
         } else {
             panic!("Interpreter has failed to enforce type checking on statements.")
         }
+        return Value::Nil
         
     }
     fn arity(self) -> usize {
