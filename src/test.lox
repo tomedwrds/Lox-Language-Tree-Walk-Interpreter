@@ -1,5 +1,6 @@
-fun sayHi(first, last) {
-  print "Hi, " + first + " " + last + "!";
+fun count(n) {
+  if (n > 1) count(n - 1);
+  print n;
 }
 
-sayHi("Dear", "Reader");
+count(3);

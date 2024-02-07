@@ -70,6 +70,7 @@ impl Parser {
     fn function_statement(&mut self, kind: &str) -> Result<Stmt, ParseError> {
         let token = self.consume(TokenType::IDENTIFIER, &format!("Expect {} name", kind))?;
         let token_copy = token.clone(); //prevents issue with i/mutable refrences to self
+        self.consume(TokenType::LEFT_PAREN, &format!("Expect '(' after {kind} name."))?;
         let mut params: Vec<Token> = vec![];
         if !self.check(TokenType::RIGHT_PAREN) {
             params.push(self.consume(TokenType::IDENTIFIER, "Expect parameter name.")?.clone());

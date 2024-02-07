@@ -20,15 +20,14 @@ mod tests;
 
 #[derive(Debug)]
 pub struct Interpreter {
-    enviroment: Enviroment,
+    pub enviroment: Enviroment,
     pub global: Enviroment
 }
 
 pub fn interpret(statements: Vec<Stmt>) {
-    let global = create_enviroment(None);
     let mut interpreter = Interpreter {
-        enviroment: global.clone(),
-        global: global
+        global: create_enviroment(None),
+        enviroment: create_enviroment(None)
     };
     interpreter.interpret(statements);
 }
@@ -98,16 +97,18 @@ impl Interpreter {
             value = self.interpret_expression(expr).unwrap();
         }
 
-        self.enviroment.put(token.lexeme, value);
+        match &self.enviroment.enclosing {
+            Some(env) => self.enviroment.put(token.lexeme, value),
+            None => self.global.put(token.lexeme, value),
+        } 
     }
-    
     fn interpret_statement_expression(&mut self, expr: Expr)  {
         let value = self.interpret_expression(expr);
     }
 
     fn interpret_statement_function(&mut self, name: Token, params: Vec<Token>, code: Vec<Stmt>)  {
         let func = Value::LoxInstance(LoxInstance::LoxFunction(LoxFunction { stmt: Stmt::Function(name.clone(), params, code)  }));
-        self.enviroment.put(name.lexeme, func);
+        self.global.put(name.lexeme, func);
     }
     
     fn interpret_statement_print(&mut self, expr: Expr)  {
@@ -146,9 +147,9 @@ impl Interpreter {
         let LoxInstance::LoxFunction(function) = lox_instane; 
         let func_arity = function.clone().arity(); 
         if func_arity == arguments_interpreted.len() {
-            Err(RuntimeError::Function(format!("Expected {} arguments but got {}.",func_arity, arguments_interpreted.len())))
+            return Ok(function.call_function(self, arguments_interpreted));
         } else {
-            return Ok(function.call_function(self, arguments_interpreted))
+            Err(RuntimeError::Function(format!("Expected {} arguments but got {}.",func_arity, arguments_interpreted.len())))
         }   
         
       } else {
@@ -177,12 +178,16 @@ impl Interpreter {
 
     fn interpret_expression_assignment(&mut self, token: Token, expr: Expr) -> Result<Value, RuntimeError> {
         let value = self.interpret_expression(expr)?;
-        self.enviroment.assign(token, &value)?;
+        match &self.enviroment.enclosing {
+            Some(env) => self.enviroment.assign(token, &value, &mut self.global)?,
+            None => self.global.assign_global(token, &value)?,
+        } 
+        
         Ok(value)
     }
     
     fn interpret_expression_variable(&mut self, token: Token) -> Result<Value, RuntimeError> {
-        return self.enviroment.get(token);
+        return self.enviroment.get(token, &self.global);
     }
     fn interpret_literal(&mut self, literal: Literal) -> Value {
         match literal {
