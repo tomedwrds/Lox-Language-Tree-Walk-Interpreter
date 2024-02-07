@@ -14,7 +14,8 @@ pub enum Value {
 pub enum RuntimeError {
     Variable(Token, String),
     Type(String),
-    Function(String)
+    Function(String),
+    Return(Option<Value>)
 }
 mod tests;
 
@@ -35,26 +36,31 @@ pub fn interpret(statements: Vec<Stmt>) {
 impl Interpreter {
     pub fn interpret(&mut self, statements: Vec<Stmt>) {
         for statement in statements.iter() {
-            self.interpret_statement(statement.clone());
+            let stmt = self.interpret_statement(statement.clone());
+            if let Err(error) = stmt {
+                print!{"{:?}", error};
+            }
         }
     }
 
-    fn interpret_statement(&mut self, stmt: Stmt)  {
+    fn interpret_statement(&mut self, stmt: Stmt) -> Result<(), RuntimeError>  {
         match stmt {
             Stmt::Block(ve) => self.interpret_statement_block(ve, create_enviroment(Some(self.enviroment.clone()))),
             Stmt::If(c,i ,e) => self.intepret_statement_if(c, *i, e),
             Stmt::Expression(e) => self.interpret_statement_expression(e),
             Stmt::Function(n, p, c) => self.interpret_statement_function(n, p, c),
             Stmt::Print(e) => self.interpret_statement_print(e),
+            Stmt::Return(t,e ) => self.interpret_statement_return(t, e),
             Stmt::Var(t, e) => self.interpret_statement_variable(t, e),
             Stmt::While(e, s) => self.interpret_statement_while(e, *s),
         }
     }
 
-    fn interpret_statement_while(&mut self, condition: Expr, stmt: Stmt) {
+    fn interpret_statement_while(&mut self, condition: Expr, stmt: Stmt) -> Result<(), RuntimeError> {
         while self.is_truth(condition.clone()) {
-            self.interpret_statement(stmt.clone())
+            self.interpret_statement(stmt.clone())?
         } 
+        Ok(())
     }
 
     fn is_truth(&mut self, expr: Expr) -> bool {
@@ -65,56 +71,70 @@ impl Interpreter {
             return false
         }
     }
-    fn intepret_statement_if(&mut self, condition: Expr, if_stmt: Stmt, else_stmt: Option<Box<Stmt>>) {
+    fn intepret_statement_if(&mut self, condition: Expr, if_stmt: Stmt, else_stmt: Option<Box<Stmt>>) -> Result<(), RuntimeError> {
         let eval_condition = self.interpret_expression(condition).unwrap();
         if let Value::Bool(bool_eval_condition) = eval_condition {
             if bool_eval_condition {
-                self.interpret_statement(if_stmt)
+                self.interpret_statement(if_stmt)?
             } else if let Some(else_stmt_defined) = else_stmt {
-                self.interpret_statement(*else_stmt_defined)
+                self.interpret_statement(*else_stmt_defined)?
             }
         } else {
             print!("If statement cannot evaluate non boolean expression")
         }
+        Ok(())
     }
     
-    pub fn interpret_statement_block(&mut self, stmts: Vec<Stmt>, env: Enviroment) {
+    pub fn interpret_statement_block(&mut self, stmts: Vec<Stmt>, env: Enviroment) -> Result<(), RuntimeError> {
         self.enviroment = env;
 
         for stmt in stmts {
-            self.interpret_statement(stmt);
+            self.interpret_statement(stmt)?;
         }
         if let Some(enclosing) = self.enviroment.enclosing.clone() {
             self.enviroment = *enclosing
         } else {
             panic!("Invalid enviroment");
         }
+        Ok(())
     }
 
-    fn interpret_statement_variable(&mut self, token: Token, expr: Expr)  {
+    fn interpret_statement_variable(&mut self, token: Token, expr: Expr) -> Result<(), RuntimeError>  {
         let mut value = Value::Nil;
         if expr != Expr::Literal(Literal::Nil) {
-            value = self.interpret_expression(expr).unwrap();
+            value = self.interpret_expression(expr)?;
         }
 
         match &self.enviroment.enclosing {
             Some(env) => self.enviroment.put(token.lexeme, value),
             None => self.global.put(token.lexeme, value),
         } 
+        Ok(())
     }
-    fn interpret_statement_expression(&mut self, expr: Expr)  {
-        let value = self.interpret_expression(expr);
+    fn interpret_statement_expression(&mut self, expr: Expr) -> Result<(), RuntimeError>  {
+        let value = self.interpret_expression(expr)?;
+        Ok(())
     }
 
-    fn interpret_statement_function(&mut self, name: Token, params: Vec<Token>, code: Vec<Stmt>)  {
+    fn interpret_statement_function(&mut self, name: Token, params: Vec<Token>, code: Vec<Stmt>) -> Result<(), RuntimeError>   {
         let func = Value::LoxInstance(LoxInstance::LoxFunction(LoxFunction { stmt: Stmt::Function(name.clone(), params, code)  }));
         self.global.put(name.lexeme, func);
+        Ok(())
     }
     
-    fn interpret_statement_print(&mut self, expr: Expr)  {
+    fn interpret_statement_print(&mut self, expr: Expr) -> Result<(), RuntimeError> {
         //TODO better error handling
-        let value = self.interpret_expression(expr).unwrap();
+        let value = self.interpret_expression(expr)?;
         print!("{:?}\n", value);
+        Ok(())
+    }
+
+    fn interpret_statement_return(&mut self, token: Token, expr: Option<Expr>) -> Result<(), RuntimeError>  {
+        let mut value: Option<Value> = None;
+        if let Some(expr_set) = expr {
+            value = Some(self.interpret_expression(expr_set)?)
+        }
+        Err(RuntimeError::Return(value))
     }
     
     fn interpret_expression(&mut self, expr: Expr) -> Result<Value, RuntimeError> {

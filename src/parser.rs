@@ -54,6 +54,8 @@ impl Parser {
         }
         else if self.token_match(vec![TokenType::PRINT]) {
             return self.print_statement();
+        } else if self.token_match(vec![TokenType::RETURN]) {
+            return self.return_statement(); 
         } else if self.token_match(vec![TokenType::WHILE]) {
             return self.while_statement(); 
         }  else if self.token_match(vec![TokenType::FOR]) {
@@ -152,6 +154,18 @@ impl Parser {
         let expr = self.expression()?;
         self.consume(TokenType::SEMICOLON, "Expect ';' after print.")?;
         return Ok(Stmt::Print(expr));
+    }
+
+    fn return_statement(&mut self) -> Result<Stmt, ParseError> {
+        let keyword = self.previous().clone();
+        let mut value: Option<Expr> = None;
+
+        if !self.check(TokenType::SEMICOLON) {
+            value = Some(self.expression()?);
+        }
+
+        self.consume(TokenType::SEMICOLON, "Expect ';' after return value.")?;
+        return Ok(Stmt::Return(keyword,value));
     }
 
     fn block_statement(&mut self) -> Result<Vec<Stmt>, ParseError> {

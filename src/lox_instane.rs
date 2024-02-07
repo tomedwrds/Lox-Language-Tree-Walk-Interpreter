@@ -1,4 +1,4 @@
-use crate::{enviroment::create_enviroment, interpreter::{self, Interpreter, Value}, stmt::Stmt};
+use crate::{enviroment::create_enviroment, interpreter::{self, Interpreter, RuntimeError, Value}, stmt::Stmt};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum LoxInstance {
@@ -24,7 +24,15 @@ impl Callable for LoxFunction {
             for i in 0..params.len() {
                 enviroment.put(params[i].lexeme.clone(), arguments[i].clone())
             }
-            interpreter.interpret_statement_block(body,enviroment);
+            if let Err(error_return) = interpreter.interpret_statement_block(body,enviroment) {
+                if let RuntimeError::Return(return_value_option) = error_return {
+                    if let Some(return_value) = return_value_option {
+                        interpreter.enviroment = env;
+                        return return_value
+                    }   
+                }
+            }
+
         } else {
             panic!("Interpreter has failed to enforce type checking on statements.")
         }
