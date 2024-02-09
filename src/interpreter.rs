@@ -61,8 +61,19 @@ impl Interpreter {
 
     fn interpret_statement_class(&mut self, token: Token, methods: Vec<Stmt>) -> Result<(), RuntimeError> {
         self.global.put(token.lexeme.clone(), Value::Nil);
+        let mut class_methods: HashMap<String, LoxFunction> = HashMap::new();
+        for method in methods {
+            if let Stmt::Function(name, params , code ) = method.clone() {
+                let function = LoxFunction {
+                    stmt: method
+                };
+                class_methods.insert(name.lexeme, function);
+            }
+        }
+        
         let class = Value::LoxCallable(LoxCallable::LoxClass(LoxClass {
-            name: token.lexeme.clone()
+            name: token.lexeme.clone(),
+            methods: class_methods
         }));
         self.enviroment.assign(token, &class, &mut self.global)
     }
@@ -193,9 +204,9 @@ impl Interpreter {
     }
 
     fn interpret_expression_call(&mut self, call: Expr, paren: Token, arguments: Vec<Expr>) -> Result<Value, RuntimeError> {
-      
       let callable_var = match call {
         Expr::Variable(token) => self.interpret_expression_variable(token),
+        Expr::Get(expr, token) => self.interpret_get(*expr, token),
         _ => Err(RuntimeError::Type("Attempting to call non functions and classes".to_string()))
       }?;
 

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap};
 
 use crate::{enviroment::create_enviroment, interpreter::{self, Interpreter, RuntimeError, Value}, lox_instance::LoxInstance, stmt::Stmt};
 
@@ -55,7 +55,8 @@ impl Callable for LoxFunction {
 #[derive(Debug, PartialEq, Clone)]
 
 pub struct LoxClass {
-    pub name: String
+    pub name: String,
+    pub methods: HashMap<String, LoxFunction>
 }
 
 impl Callable for LoxClass {
@@ -69,5 +70,14 @@ impl Callable for LoxClass {
     }
     fn arity(self) -> usize {
        return 0
+    }
+}
+
+impl LoxClass {
+    pub fn find_method(self, name: String) ->Option<LoxFunction> {
+        if let Some(method) = self.methods.get(&name) {
+            return Some(method.clone())
+        }
+        return None
     }
 }

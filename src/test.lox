@@ -1,4 +1,8 @@
 class Bagel {}
 var bagel = Bagel();
-bagel.flavour = "tea";
-print bagel.flavour; // Prints "Bagel instance".
+
+fun test() {
+    print "hello";
+}
+bagel.flavour = test;
+bagel.flavour(); // Prints "Bagel instance".
