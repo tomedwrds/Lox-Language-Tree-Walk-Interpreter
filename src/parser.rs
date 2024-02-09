@@ -50,9 +50,10 @@ impl Parser {
 
     fn statement(&mut self) -> Result<Stmt, ParseError> {
         if self.token_match(vec![TokenType::FUN]) {
-            self.function_statement("function")
-        }
-        else if self.token_match(vec![TokenType::PRINT]) {
+            self.function_statement("function")   
+        } else if self.token_match(vec![TokenType::CLASS]) {
+            return self.class_statement();
+        } else if self.token_match(vec![TokenType::PRINT]) {
             return self.print_statement();
         } else if self.token_match(vec![TokenType::RETURN]) {
             return self.return_statement(); 
@@ -67,6 +68,20 @@ impl Parser {
         } else {
             return self.expression_statement();
         }
+    }
+
+    fn class_statement(&mut self) -> Result<Stmt, ParseError> {
+        let name = self.consume(TokenType::IDENTIFIER, "Except class name.")?.clone();
+        self.consume(TokenType::LEFT_BRACE, "Expect '{' before class body.")?;
+
+        let mut methods: Vec<Stmt> = vec![];
+        while !self.check(TokenType::RIGHT_BRACE) && !self.is_at_end() {
+            methods.push(self.function_statement("method")?);
+        }
+
+        self.consume(TokenType::RIGHT_BRACE, "Expect '}' before class body.")?; 
+
+        return Ok(Stmt::Class(name, methods))
     }
 
     fn function_statement(&mut self, kind: &str) -> Result<Stmt, ParseError> {
@@ -198,6 +213,7 @@ impl Parser {
 
             match expr {
                 Expr::Variable(token) => return Ok(Expr::Assign(token, Box::new(value))),
+                Expr::Get(expr, token ) => return Ok(Expr::Set(expr, token, Box::new(value))),
                 _ => {
                     print!("Invalid assignment target");
                 }
@@ -295,6 +311,9 @@ impl Parser {
         while true {
             if self.token_match(vec![TokenType::LEFT_PAREN]) {
                 expr = self.finish_call(expr)?;
+            } else if self.token_match(vec![TokenType::DOT]) {
+                let  token = self.consume(TokenType::IDENTIFIER, "Expect property name after '.'.")?;
+                expr = Expr::Get(Box::new(expr), token.clone());
             } else {
                 break;
             }

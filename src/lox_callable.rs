@@ -1,8 +1,11 @@
-use crate::{enviroment::create_enviroment, interpreter::{self, Interpreter, RuntimeError, Value}, stmt::Stmt};
+use std::collections::HashMap;
+
+use crate::{enviroment::create_enviroment, interpreter::{self, Interpreter, RuntimeError, Value}, lox_instance::LoxInstance, stmt::Stmt};
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum LoxInstance {
-    LoxFunction(LoxFunction)
+pub enum LoxCallable {
+    LoxFunction(LoxFunction),
+    LoxClass(LoxClass)
 }
 
 pub trait Callable {
@@ -46,5 +49,24 @@ impl Callable for LoxFunction {
         } else {
             panic!("Interpreter has failed to enforce type checking on statements.")
         }   
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+
+pub struct LoxClass {
+    pub name: String
+}
+
+impl Callable for LoxClass {
+    fn call_function(self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
+        let instance = LoxInstance {
+            class: self,
+            fields: HashMap::new()
+        };
+        return Value::LoxInstance(instance);
+    }
+    fn arity(self) -> usize {
+       return 0
     }
 }

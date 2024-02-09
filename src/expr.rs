@@ -1,10 +1,12 @@
-use crate::scanner::{self, Token};
+use crate::scanner::Token;
 use std::fmt::{self};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
     Call(Box<Expr>, Token, Vec<Expr>),
+    Set(Box<Expr>, Token, Box<Expr>),
+    Get(Box<Expr>, Token),
     Grouping(Box<Expr>),
     Literal(Literal),
     Logical(Box<Expr>, Token, Box<Expr>),

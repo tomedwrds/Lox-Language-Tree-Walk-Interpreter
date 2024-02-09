@@ -8,7 +8,9 @@ mod parser;
 mod interpreter;
 mod stmt;
 mod enviroment;
-mod lox_instane;
+mod lox_callable;
+mod lox_instance;
+
 
 fn main() {
     let arg: Vec<String> = env::args().collect();
