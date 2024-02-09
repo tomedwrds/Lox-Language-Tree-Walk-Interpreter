@@ -6,7 +6,8 @@ use crate::{interpreter::{RuntimeError, Value}, lox_callable::LoxClass, scanner:
 
 pub struct LoxInstance {
     pub class: LoxClass,
-    pub fields: HashMap<String, Value>
+    pub fields: HashMap<String, Value>,
+    //pub instance_name: String
 }
 
 impl LoxInstance {

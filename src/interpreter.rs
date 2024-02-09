@@ -163,11 +163,18 @@ impl Interpreter {
         }
     }
 
-    fn interpret_set(&mut self, object: Expr, name: Token, value: Expr) -> Result<Value, RuntimeError> {
-        let object = self.interpret_expression(object)?;
+    fn interpret_set(&mut self, object_expr: Expr, name: Token, value: Expr) -> Result<Value, RuntimeError> {
+        
+        let var_token = match object_expr.clone() {
+            Expr::Variable(t) => t,
+            _ => panic!("Error: cant set property on non variable")
+        };
+        
+        let object = self.interpret_expression(object_expr)?;
         if let Value::LoxInstance(mut instance) = object {
           let set_value = self.interpret_expression(value)?;
           instance.set(name, set_value.clone());
+          self.enviroment.assign(var_token, &Value::LoxInstance(instance) , &mut self.global)?;
           return Ok(set_value);
         } else {
           return Err(RuntimeError::Class("Only instance have fields".to_string()));

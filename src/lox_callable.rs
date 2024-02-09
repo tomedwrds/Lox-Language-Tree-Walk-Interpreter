@@ -62,7 +62,8 @@ impl Callable for LoxClass {
     fn call_function(self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
         let instance = LoxInstance {
             class: self,
-            fields: HashMap::new()
+            fields: HashMap::new(),
+            
         };
         return Value::LoxInstance(instance);
     }
