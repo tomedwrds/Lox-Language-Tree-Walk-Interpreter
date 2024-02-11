@@ -1,8 +1,11 @@
-class Egotist {
-  speak() {
-    print this;
+class Cake {
+  taste() {
+    flavour = "shit";
+    var adjective = "delicious";
+    print "The " + this.flavor + " cake is " + adjective + "!";
   }
 }
 
-var method = Egotist().speak;
-method();
+var cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste(); // Prints "The German chocolate cake is delicious!".

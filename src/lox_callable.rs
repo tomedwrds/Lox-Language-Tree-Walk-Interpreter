@@ -63,14 +63,22 @@ pub struct LoxClass {
 impl Callable for LoxClass {
     fn call_function(self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Value {
         let instance = LoxInstance {
-            class: self,
+            class: self.clone(),
             fields: HashMap::new(),
-            
         };
+
+        let initalizer = self.find_method("init".to_string());
+        if let Some(initalizer_func) = initalizer {
+            initalizer_func.call_function(interpreter, arguments);
+        }
         return Value::LoxInstance(instance);
     }
     fn arity(self) -> usize {
-       return 0
+        let initalizer = self.find_method("init".to_string());
+        if let Some(initalizer_func) = initalizer {
+            return initalizer_func.arity()
+        }
+        return 0
     }
 }
 
