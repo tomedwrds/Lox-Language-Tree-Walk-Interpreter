@@ -52,6 +52,7 @@ impl Callable for LoxFunction {
     }
 }
 
+
 #[derive(Debug, PartialEq, Clone)]
 
 pub struct LoxClass {

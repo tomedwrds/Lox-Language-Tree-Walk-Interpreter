@@ -118,7 +118,6 @@ impl Default for Scanner {
             (String::from("print"), TokenType::PRINT),
             (String::from("return"), TokenType::RETURN),
             (String::from("super"), TokenType::SUPER),
-            (String::from("this"), TokenType::THIS),
             (String::from("true"), TokenType::TRUE),
             (String::from("var"), TokenType::VAR),
             (String::from("while"), TokenType::WHILE),

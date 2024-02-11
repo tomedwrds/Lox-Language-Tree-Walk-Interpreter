@@ -343,6 +343,9 @@ impl Parser {
         if self.token_match(vec![TokenType::FALSE]) { 
             return Ok(Expr::Literal(Literal::False))
         }
+        // if self.token_match(vec![TokenType::THIS]) { 
+        //     return Ok(Expr::This(self.previous().clone()))
+        // }
         if self.token_match(vec![TokenType::TRUE]) { 
             return Ok(Expr::Literal(Literal::True))
         }

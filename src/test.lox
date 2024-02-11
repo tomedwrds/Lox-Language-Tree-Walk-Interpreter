@@ -1,8 +1,8 @@
-class Bagel {}
-var bagel = Bagel();
-
-fun test() {
-    print "hello";
+class Egotist {
+  speak() {
+    print this;
+  }
 }
-bagel.flavour = test;
-bagel.flavour(); // Prints "Bagel instance".
+
+var method = Egotist().speak;
+method();

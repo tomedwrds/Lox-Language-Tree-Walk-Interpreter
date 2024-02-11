@@ -7,7 +7,7 @@ pub enum Value {
     String(String),
     Bool(bool),
     Nil,
-    LoxCallable(LoxCallable),
+    LoxCallable(Box<LoxCallable>),
     LoxInstance(LoxInstance)
 }
 
@@ -71,10 +71,10 @@ impl Interpreter {
             }
         }
         
-        let class = Value::LoxCallable(LoxCallable::LoxClass(LoxClass {
+        let class = Value::LoxCallable(Box::new(LoxCallable::LoxClass(LoxClass {
             name: token.lexeme.clone(),
             methods: class_methods
-        }));
+        })));
         self.enviroment.assign(token, &class, &mut self.global)
     }
 
@@ -139,7 +139,7 @@ impl Interpreter {
     }
 
     fn interpret_statement_function(&mut self, name: Token, params: Vec<Token>, code: Vec<Stmt>) -> Result<(), RuntimeError>   {
-        let func = Value::LoxCallable(LoxCallable::LoxFunction(LoxFunction { stmt: Stmt::Function(name.clone(), params, code)  }));
+        let func = Value::LoxCallable(Box::new(LoxCallable::LoxFunction(LoxFunction { stmt: Stmt::Function(name.clone(), params, code)  })));
         self.global.put(name.lexeme, func);
         Ok(())
     }
@@ -170,7 +170,8 @@ impl Interpreter {
             Expr::Variable(t) => self.interpret_expression_variable(t),
             Expr::Assign(t, e) => self.interpret_expression_assignment(t, *e),
             Expr::Logical(l, o, r) => self.interpret_expression_logical(*l, o, *r),
-            Expr::Call(c, p, a) => self.interpret_expression_call(*c, p, a)
+            Expr::Call(c, p, a) => self.interpret_expression_call(*c, p, a),
+            Expr::This(v) => Ok(v)
         }
     }
 
@@ -217,7 +218,7 @@ impl Interpreter {
       }
 
       if let Value::LoxCallable(lox_callable) = callable_var {
-        match lox_callable {
+        match *lox_callable {
             LoxCallable::LoxClass(class) => {
                 return Ok(class.call_function(self, arguments_interpreted))
             },
