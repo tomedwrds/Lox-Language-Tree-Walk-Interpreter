@@ -45,6 +45,20 @@ impl Interpreter {
         }
     }
 
+    fn format(&mut self, value: Value) -> String {
+        match value {
+            Value::Bool(b) => b.to_string(),
+            Value::Nil => "Nil".to_string(),
+            Value::Number(n) => n.to_string(),
+            Value::String(s) => s,
+            Value::LoxInstance(i) => format!("<class {}>",i.class.name),
+            Value::LoxCallable(c) => match *c {
+                LoxCallable::LoxClass(c) => format!("<class instance {}",c.name),
+                LoxCallable::LoxFunction(f) => format!("<func>")
+            } 
+        }
+    }
+
     fn interpret_statement(&mut self, stmt: Stmt) -> Result<(), RuntimeError>  {
         match stmt {
             Stmt::Block(ve) => self.interpret_statement_block(ve, create_enviroment(Some(self.enviroment.clone()))),
@@ -160,9 +174,8 @@ impl Interpreter {
     }
     
     fn interpret_statement_print(&mut self, expr: Expr) -> Result<(), RuntimeError> {
-        //TODO better error handling
         let value = self.interpret_expression(expr)?;
-        print!("{:?}\n", value);
+        print!("{:?}\n", self.format(value));
         Ok(())
     }
 

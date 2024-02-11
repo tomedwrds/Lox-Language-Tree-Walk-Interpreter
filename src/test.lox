@@ -1,6 +1,6 @@
 class Doughnut {
   cook() {
-    print "Fry until golden brown.";
+    print "1";
   }
 }
 
