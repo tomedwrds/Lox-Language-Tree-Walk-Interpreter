@@ -1,4 +1,4 @@
-use crate::{interpreter::Value, scanner::Token};
+use crate::{interpreter::Value, scanner::Token, stmt::Stmt};
 use std::fmt::{self};
 
 #[derive(Clone, PartialEq, Debug)]
@@ -13,7 +13,7 @@ pub enum Expr {
     Unary(Token, Box<Expr>),
     Variable(Token),
     This(Value),
-    Assign(Token, Box<Expr>)
+    Assign(Token, Box<Expr>),
 }
 #[derive(Clone, PartialEq, Debug)]
 pub enum Literal {

@@ -30,22 +30,22 @@ impl Enviroment {
 
     pub fn get(&mut self, token: Token, global: &Enviroment) -> Result<Value, RuntimeError> {
         if let Some(value) = self.values.get(&token.lexeme) {
-            Ok(value.clone())
+            return Ok(value.clone())
         } else if let Some(env) = &self.enclosing {
             if let Ok(value) = (*env.clone()).get(token.clone(), global) {
-                Ok(value.clone())
+                return Ok(value.clone())
             }  else {
                 if let Some(value) = global.values.get(&token.lexeme) {
-                    Ok(value.clone())
+                    return Ok(value.clone())
                 } else {
-                    Err(RuntimeError::Variable(token.clone(), format!("Undefined variable '{:?}'.", token.lexeme)))
+                    return Err(RuntimeError::Variable(token.clone(), format!("Undefined variable '{:?}'.", token.lexeme)))
                 }
             }    
         } else {
             if let Some(value) = global.values.get(&token.lexeme) {
-                Ok(value.clone())
+                return Ok(value.clone())
             } else {
-                Err(RuntimeError::Variable(token.clone(), format!("Undefined variable '{:?}'.", token.lexeme)))
+                return Err(RuntimeError::Variable(token.clone(), format!("Undefined variable '{:?}'.", token.lexeme)))
             }
         }
         

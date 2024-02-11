@@ -57,7 +57,8 @@ impl Callable for LoxFunction {
 
 pub struct LoxClass {
     pub name: String,
-    pub methods: HashMap<String, LoxFunction>
+    pub methods: HashMap<String, LoxFunction>,
+    pub superclass: Box<Option<LoxClass>>
 }
 
 impl Callable for LoxClass {
@@ -86,6 +87,10 @@ impl LoxClass {
     pub fn find_method(self, name: String) ->Option<LoxFunction> {
         if let Some(method) = self.methods.get(&name) {
             return Some(method.clone())
+        }
+
+        if let Some(superclass_exists) = *self.superclass {
+            return superclass_exists.find_method(name)
         }
         return None
     }

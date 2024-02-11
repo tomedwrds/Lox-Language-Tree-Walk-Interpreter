@@ -48,7 +48,7 @@ impl Interpreter {
     fn interpret_statement(&mut self, stmt: Stmt) -> Result<(), RuntimeError>  {
         match stmt {
             Stmt::Block(ve) => self.interpret_statement_block(ve, create_enviroment(Some(self.enviroment.clone()))),
-            Stmt::Class(n, m) => self.interpret_statement_class(n, m),
+            Stmt::Class(n,s, m) => self.interpret_statement_class(n,s, m),
             Stmt::If(c,i ,e) => self.intepret_statement_if(c, *i, e),
             Stmt::Expression(e) => self.interpret_statement_expression(e),
             Stmt::Function(n, p, c) => self.interpret_statement_function(n, p, c),
@@ -59,7 +59,21 @@ impl Interpreter {
         }
     }
 
-    fn interpret_statement_class(&mut self, token: Token, methods: Vec<Stmt>) -> Result<(), RuntimeError> {
+    fn interpret_statement_class(&mut self, token: Token, superclass: Option<Expr>, methods: Vec<Stmt>) -> Result<(), RuntimeError> {
+        let mut superclass_final: Option<LoxClass> = None;
+        if let Some(superclass_expr) = superclass {
+            let superclass_value = Some(self.interpret_expression(superclass_expr)?);
+            if let Some(Value::LoxCallable(superclass_callable)) = superclass_value.clone() {
+                if let LoxCallable::LoxClass(class) = *superclass_callable {
+                    superclass_final = Some(class);
+                } else {
+                    return Err(RuntimeError::Class("Superclass must be a class".to_string()))
+                }
+            } else {
+                return Err(RuntimeError::Class("Superclass must be a class".to_string()))
+            }
+        }
+        
         self.global.put(token.lexeme.clone(), Value::Nil);
         let mut class_methods: HashMap<String, LoxFunction> = HashMap::new();
         for method in methods {
@@ -73,7 +87,8 @@ impl Interpreter {
         
         let class = Value::LoxCallable(Box::new(LoxCallable::LoxClass(LoxClass {
             name: token.lexeme.clone(),
-            methods: class_methods
+            methods: class_methods,
+            superclass: Box::new(superclass_final)
         })));
         self.enviroment.assign(token, &class, &mut self.global)
     }

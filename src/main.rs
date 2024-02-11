@@ -31,7 +31,6 @@ fn run_file(file_path: &String) {
         .expect("Error: file doesnt exist");
     
     let scanner = scanner::scan(contents);
-    scanner.display_tokens();
     let parser = parser::parse(scanner.tokens);
     let _interpreter = interpret(parser);
 }

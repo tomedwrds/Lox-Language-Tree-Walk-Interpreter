@@ -3,13 +3,13 @@ use crate::{expr::Expr, scanner::Token};
 
 pub enum Stmt {
     Block(Vec<Stmt>),
-    Class(Token, Vec<Stmt>),
+    Class(Token, Option<Expr>, Vec<Stmt>),
     Expression(Expr),
     Function(Token, Vec<Token>, Vec<Stmt>),
     If(Expr, Box<Stmt>, Option<Box<Stmt>>),
     Print(Expr),
     Return(Token, Option<Expr>),
     Var(Token, Expr),
-    While(Expr, Box<Stmt>)
+    While(Expr, Box<Stmt>),
 }
 
