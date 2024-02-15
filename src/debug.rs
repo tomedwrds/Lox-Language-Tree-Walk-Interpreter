@@ -11,6 +11,11 @@ pub fn disassemble_instruction(op_code: &OpCode, line: &u16, constants: &Vec<Con
     print!("{:<6}", line);
     match op_code {
         OpCode::Return => print!("OP_RETURN\n"),
-        OpCode::Constant(c) => print!("OP_CONSTANT {}\n", constants[*c])
+        OpCode::Constant(c) => print!("OP_CONSTANT {}\n", constants[*c]),
+        OpCode::Negate => print!("OP_NEGATE\n"),
+        OpCode::Add => print!("OP_ADD\n"),
+        OpCode::Subtract => print!("OP_SUBTRACT\n"),
+        OpCode::Multiply => print!("OP_MULTIPLY\n"),
+        OpCode::Divide => print!("OP_DIVIDE\n"),
     }
 }

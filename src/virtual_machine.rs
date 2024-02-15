@@ -31,15 +31,38 @@ impl VirtualMachine {
                 OpCode::Return => {
                     print!("{}\n", self.stack.pop());
                     return InterpretResult::InterpretOk
-                },
-                OpCode::Constant(index) => {
+                }, OpCode::Constant(index) => {
                     if let Some(constant) = constants.get(*index) {
                         self.stack.push(constant.clone());
                     } else {
                         //TODO: Add better error handling
                         return InterpretResult::InterpretRuntimeError
                     }
+                }, 
+                OpCode::Negate =>  {
+                    let n = self.stack.pop();
+                    self.stack.push(-n)
                 }
+                OpCode::Add => {
+                    let n2 = self.stack.pop();
+                    let n1 = self.stack.pop();
+                    self.stack.push(n1 + n2);
+                },
+                OpCode::Subtract => {
+                    let n2 = self.stack.pop();
+                    let n1 = self.stack.pop();
+                    self.stack.push(n1 - n2);
+                },
+                OpCode::Multiply => {
+                    let n2 = self.stack.pop();
+                    let n1 = self.stack.pop();
+                    self.stack.push(n1 * n2);
+                },
+                OpCode::Divide => {
+                    let n2 = self.stack.pop();
+                    let n1 = self.stack.pop();
+                    self.stack.push(n1 / n2);
+                },
             }
         }
         return InterpretResult::InterpretOk;
@@ -84,3 +107,4 @@ impl Stack {
         }
     }
 }
+

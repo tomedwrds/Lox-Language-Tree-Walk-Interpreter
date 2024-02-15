@@ -33,8 +33,15 @@ fn main() {
     // let file = String::from("src/test.lox");
     // run_file(&file);
     let chunk = Chunk {
-        code: vec![(OpCode::Constant(0), 123), (OpCode::Return,123)],
-        constant: vec![Constant::Number(1.2)]
+        code: vec![
+        (OpCode::Constant(0), 123),
+        (OpCode::Constant(1), 123),
+        (OpCode::Add, 123),
+        (OpCode::Constant(2), 123),
+        (OpCode::Divide, 123),
+         (OpCode::Negate,123),  
+         (OpCode::Return,123)],
+        constant: vec![Constant::Number(1.2), Constant::Number(3.4), Constant::Number(5.6)]
     };
 
     let mut vm = VirtualMachine {
