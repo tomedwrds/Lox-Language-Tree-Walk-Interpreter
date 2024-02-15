@@ -97,6 +97,12 @@ pub fn scan(input: String) -> Scanner {
   return scanner;
 }
 
+pub fn scan_bytecode(input: String) -> Scanner {
+  let mut scanner: Scanner = Default::default();
+  scanner.source = input;
+  return scanner;
+}
+
 impl Default for Scanner {
   fn default() -> Scanner {
       Scanner {
@@ -136,13 +142,19 @@ impl Scanner {
 
   fn scan_tokens(&mut self, input: String) {
     self.source = input;
-    while !self.scan_finished() {
-      self.start = self.current;
-      self.scan_token();
+    while true {
+      if let Some(token) = self.scan_token() {
+        if token.token_type == TokenType::EOF {
+          break;
+        }
+      }
     }
-    self.add_token(TokenType::EOF)
   }
-  fn scan_token (&mut self) {
+  pub fn scan_token (&mut self) -> Option<Token> {
+    self.start = self.current;
+    if self.scan_finished() {
+      return self.add_token(TokenType::EOF)
+    }
     let _char = self.advance();
     match _char {
       '(' => self.add_token(TokenType::LEFT_PAREN),
@@ -190,28 +202,31 @@ impl Scanner {
           while self.peek() != '\n' && !self.scan_finished() {
             self.advance();
           }
+          return None
         } else {
           self.add_token(TokenType::SLASH)
         }},
-      ' ' => (),
-      '\r' => (),
-      '\t' => (),
-      '\n' => {self.line += 1;},
+      ' ' => None,
+      '\r' => None,
+      '\t' => None,
+      '\n' => {self.line += 1; None},
       '"' => self.string(),
       
       _ => {
         if _char.is_digit(10) {
-          self.number();
+          self.number()
         } else if _char.is_alphabetic() {
-          self.identifier();
+          self.identifier()
         } else {
           print!("Invalid token");
+          return None;
         }
       }
+
     }
   }
 
-  fn identifier(&mut self) {
+  fn identifier(&mut self) -> Option<Token> {
     while self.peek().is_alphanumeric() {
       self.advance();
     }
@@ -221,13 +236,13 @@ impl Scanner {
       Some(kw_token_type) => *kw_token_type,
       None => TokenType::IDENTIFIER,
     };
-    self.add_token(token_type);
+    self.add_token(token_type)
     
     
   }
   
 
-  fn number(&mut self) {
+  fn number(&mut self) -> Option<Token> {
     while self.peek().is_digit(10) {
       self.advance();
     }
@@ -239,9 +254,9 @@ impl Scanner {
       }
     }
     let number: f64 = self.source[self.start..self.current].parse().unwrap();
-    self.add_token_literal(TokenType::NUMBER, Some(Literal::Number(number)));
+    self.add_token_literal(TokenType::NUMBER, Some(Literal::Number(number)))
   }
-  fn string(&mut self) {
+  fn string(&mut self) -> Option<Token> {
     while self.peek() != '"'  && !self.scan_finished() {
       if self.peek() == '\n' {
         self.line += 1;
@@ -252,7 +267,7 @@ impl Scanner {
 
     //trim quote
     let value = &self.source[self.start+1..self.current-1];
-    self.add_token_literal(TokenType::STRING, Some(Literal::Str(String::from(value))));
+    self.add_token_literal(TokenType::STRING, Some(Literal::Str(String::from(value))))
 
   }
 
@@ -267,21 +282,23 @@ impl Scanner {
     return true;
   }
 
-  fn add_token(&mut self, token_type: TokenType) {
+  fn add_token(&mut self, token_type: TokenType) -> Option<Token> {
     self.add_token_literal(token_type, None)
   }
 
-  fn add_token_literal(&mut self, token_type: TokenType, literal: Option<Literal>) {
+  fn add_token_literal(&mut self, token_type: TokenType, literal: Option<Literal>) -> Option<Token> {
     let mut text = &self.source[self.start..self.current];
     if token_type == TokenType::EOF {
       text = "EOF"
     }
-    self.tokens.push(Token {
+    let token = Token {
       token_type: token_type,
       lexeme: String::from(text),
       literal: literal,
       line: self.line 
-    })
+    };
+    self.tokens.push(token.clone());
+    return Some(token);
   }
 
   fn advance(&mut self) -> char {

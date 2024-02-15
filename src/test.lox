@@ -1,9 +1,1 @@
-class Doughnut {
-  cook() {
-    print "1";
-  }
-}
-
-class BostonCream < Doughnut {}
-
-BostonCream().cook();
+print 1 + 2;
