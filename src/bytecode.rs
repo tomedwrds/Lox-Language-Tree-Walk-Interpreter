@@ -11,6 +11,7 @@ pub struct Chunk {
     pub constant: Vec<Constant>
 }
 
+#[derive(Clone)]
 pub enum Constant {
     Number(f64)
 }

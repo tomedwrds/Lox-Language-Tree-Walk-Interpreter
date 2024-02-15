@@ -1,3 +1,4 @@
+use std::default;
 use std::env;
 use std::fs;
 
@@ -5,6 +6,7 @@ use bytecode::Chunk;
 use bytecode::Constant;
 use bytecode::OpCode;
 use debug::disassemble_chunk;
+use virtual_machine::VirtualMachine;
 
 use crate::interpreter::interpret;
 mod scanner;
@@ -17,6 +19,7 @@ mod lox_callable;
 mod lox_instance;
 mod bytecode;
 mod debug;
+mod virtual_machine;
 
 fn main() {
     // let arg: Vec<String> = env::args().collect();
@@ -33,7 +36,13 @@ fn main() {
         code: vec![(OpCode::Constant(0), 123), (OpCode::Return,123)],
         constant: vec![Constant::Number(1.2)]
     };
-    disassemble_chunk(&chunk, "test chunk")
+
+    let mut vm = VirtualMachine {
+        chunk,
+        stack: Default::default()
+    };
+    vm.interpret();
+
 }
 
 fn run_file(file_path: &String) {
