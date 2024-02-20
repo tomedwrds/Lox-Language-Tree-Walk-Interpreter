@@ -2,7 +2,7 @@ mod tests;
 
 use std::collections::HashMap;
 use std::fmt;
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Copy)]
 pub enum TokenType {
   // Single-character tokens.
   LEFT_PAREN,
@@ -50,7 +50,8 @@ pub enum TokenType {
   VAR, 
   WHILE,
 
-  EOF
+  EOF,
+  TOKEN_ERROR
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
@@ -143,14 +144,14 @@ impl Scanner {
   fn scan_tokens(&mut self, input: String) {
     self.source = input;
     while true {
-      if let Some(token) = self.scan_token() {
+        let token = self.scan_token();
         if token.token_type == TokenType::EOF {
           break;
-        }
+
       }
     }
   }
-  pub fn scan_token (&mut self) -> Option<Token> {
+  pub fn scan_token (&mut self) -> Token {
     self.start = self.current;
     if self.scan_finished() {
       return self.add_token(TokenType::EOF)
@@ -202,14 +203,14 @@ impl Scanner {
           while self.peek() != '\n' && !self.scan_finished() {
             self.advance();
           }
-          return None
+          return self.scan_token()
         } else {
           self.add_token(TokenType::SLASH)
         }},
-      ' ' => None,
-      '\r' => None,
-      '\t' => None,
-      '\n' => {self.line += 1; None},
+      ' ' => self.scan_token(),
+      '\r' => self.scan_token(),
+      '\t' => self.scan_token(),
+      '\n' => {self.line += 1; self.scan_token()},
       '"' => self.string(),
       
       _ => {
@@ -218,15 +219,14 @@ impl Scanner {
         } else if _char.is_alphabetic() {
           self.identifier()
         } else {
-          print!("Invalid token");
-          return None;
+          return self.add_token_literal(TokenType::TOKEN_ERROR,Some(Literal::Str(format!("Unexpected character"))));
         }
       }
 
     }
   }
 
-  fn identifier(&mut self) -> Option<Token> {
+  fn identifier(&mut self) -> Token {
     while self.peek().is_alphanumeric() {
       self.advance();
     }
@@ -242,7 +242,7 @@ impl Scanner {
   }
   
 
-  fn number(&mut self) -> Option<Token> {
+  fn number(&mut self) -> Token {
     while self.peek().is_digit(10) {
       self.advance();
     }
@@ -256,13 +256,18 @@ impl Scanner {
     let number: f64 = self.source[self.start..self.current].parse().unwrap();
     self.add_token_literal(TokenType::NUMBER, Some(Literal::Number(number)))
   }
-  fn string(&mut self) -> Option<Token> {
+  fn string(&mut self) -> Token {
     while self.peek() != '"'  && !self.scan_finished() {
       if self.peek() == '\n' {
         self.line += 1;
       }
       self.advance();
     }
+
+    if self.scan_finished() {
+      return self.add_token_literal(TokenType::TOKEN_ERROR,Some(Literal::Str(format!("Unterminated string"))));
+    }
+
     self.advance();
 
     //trim quote
@@ -282,11 +287,11 @@ impl Scanner {
     return true;
   }
 
-  fn add_token(&mut self, token_type: TokenType) -> Option<Token> {
+  fn add_token(&mut self, token_type: TokenType) -> Token {
     self.add_token_literal(token_type, None)
   }
 
-  fn add_token_literal(&mut self, token_type: TokenType, literal: Option<Literal>) -> Option<Token> {
+  fn add_token_literal(&mut self, token_type: TokenType, literal: Option<Literal>) -> Token {
     let mut text = &self.source[self.start..self.current];
     if token_type == TokenType::EOF {
       text = "EOF"
@@ -298,7 +303,7 @@ impl Scanner {
       line: self.line 
     };
     self.tokens.push(token.clone());
-    return Some(token);
+    return token;
   }
 
   fn advance(&mut self) -> char {

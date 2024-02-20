@@ -3,7 +3,7 @@ use std::env;
 use std::fs;
 
 use bytecode::Chunk;
-use bytecode::Constant;
+use bytecode::Value;
 use bytecode::OpCode;
 use compiler::compile;
 use debug::disassemble_chunk;

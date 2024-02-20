@@ -1,4 +1,6 @@
-use crate::{bytecode::{Chunk, Constant, OpCode}, debug::disassemble_instruction,};
+use std::default;
+
+use crate::{bytecode::{Chunk, OpCode, Value}, compiler::compile, debug::{disassemble_chunk, disassemble_instruction}};
 
 pub struct VirtualMachine {
     pub chunk: Chunk,
@@ -12,8 +14,17 @@ pub enum InterpretResult {
 }
 
 impl VirtualMachine {
-    pub fn interpret(&mut self) -> InterpretResult {
-        return self.run(false);
+    pub fn interpret(&mut self, src: String) -> InterpretResult {
+
+        if let Some(chunk) = compile(src) {
+            self.chunk = chunk;
+            return self.run(false);
+        } 
+        return InterpretResult::InterpretCompilerError
+
+        
+
+        
     }
 
     fn run(&mut self, execution_tracing: bool) -> InterpretResult {
@@ -76,7 +87,7 @@ impl VirtualMachine {
 // }
 
 pub struct Stack {
-    stack_vec: Vec<Constant>,
+    stack_vec: Vec<Value>,
 }
 
 impl Default for Stack {
@@ -92,11 +103,11 @@ impl Stack {
         self.stack_vec = vec![]
     }
 
-    pub fn pop(&mut self) -> Constant {
+    pub fn pop(&mut self) -> Value {
         return self.stack_vec.pop().unwrap();
     }
 
-    pub fn push(&mut self, value: Constant){
+    pub fn push(&mut self, value: Value){
         return self.stack_vec.push(value);
     }
 
