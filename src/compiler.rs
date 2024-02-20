@@ -8,6 +8,7 @@ pub fn compile(src: String) -> Option<Chunk> {
     compiler.consume(TokenType::EOF, format!("Expect end of expression"));
     
     compiler.end_compiler();
+    disassemble_chunk(&compiler.chunk, "test");
     if !compiler.had_error {
         return Some(compiler.chunk)
     }
@@ -39,7 +40,7 @@ impl Compiler {
         self.previous = self.current.clone();
 
         self.current = self.scanner.scan_token();
-        while self.current.token_type != TokenType::TOKEN_ERROR {
+        while self.current.token_type == TokenType::TOKEN_ERROR {
             self.parse_error_token(self.current.clone());
             self.current = self.scanner.scan_token();
         }
@@ -115,7 +116,6 @@ impl Compiler {
 
 
     fn parse_error(&mut self, token: Token, error_message: Option<String>) {
-        //disassemble_chunk(&self.chunk, "test");
         if self.panic_mode {
             return;
         }

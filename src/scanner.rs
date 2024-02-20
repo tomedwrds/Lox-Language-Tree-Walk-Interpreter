@@ -92,9 +92,7 @@ pub struct Scanner {
 
 pub fn scan(input: String) -> Scanner {
   let mut scanner: Scanner = Default::default();
-
-  scanner.scan_tokens(input);
-
+  scanner.source = input;
   return scanner;
 }
 
