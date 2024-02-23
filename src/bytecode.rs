@@ -38,13 +38,19 @@ impl Chunk {
 
 #[derive(Clone)]
 pub enum Value {
-    Number(f64)
+    Number(f64),
+    Bool(bool),
+    String(String),
+    Nil
 }
 
 impl Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Value::Number(n) => write!(f, "{}", n),
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::String(s) => write!(f, "{}", s),
+            Value::Nil => write!(f, "Nil")
         }
     }
 }
@@ -54,7 +60,8 @@ impl Neg for Value {
 
     fn neg(self) -> Self::Output {
         match self {
-            Self::Number(n) => Self::Number(-n)
+            Self::Number(n) => Self::Number(-n),
+            _ => 
         }
     }
 }

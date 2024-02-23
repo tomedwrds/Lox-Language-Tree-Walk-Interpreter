@@ -13,12 +13,24 @@ pub enum InterpretResult {
     InterpretRuntimeError
 }
 
+enum RuntimeError {
+    TypeError(String)
+}
+
 impl VirtualMachine {
     pub fn interpret(&mut self, src: String) -> InterpretResult {
 
         if let Some(chunk) = compile(src) {
             self.chunk = chunk;
-            return self.run(false);
+            let program = self.run(false);
+            if let Err(error) = program {
+                match error {
+                    RuntimeError::TypeError(s) => println!("TYPE ERROR {}", s)
+                }
+                return InterpretResult::InterpretRuntimeError
+            } else {
+                return InterpretResult::InterpretOk
+            }
         } 
         return InterpretResult::InterpretCompilerError
 
@@ -27,7 +39,7 @@ impl VirtualMachine {
         
     }
 
-    fn run(&mut self, execution_tracing: bool) -> InterpretResult {
+    fn run(&mut self, execution_tracing: bool) -> Result<(), RuntimeError> {
         let code = &self.chunk.code;
         let constants = &self.chunk.constant;
 
@@ -41,18 +53,22 @@ impl VirtualMachine {
             match op_code {
                 OpCode::Return => {
                     print!("{}\n", self.stack.pop());
-                    return InterpretResult::InterpretOk
+                    return Ok(())
                 }, OpCode::Constant(index) => {
                     if let Some(constant) = constants.get(*index) {
                         self.stack.push(constant.clone());
                     } else {
                         //TODO: Add better error handling
-                        return InterpretResult::InterpretRuntimeError
+                        panic!("Cant find value")
                     }
                 }, 
                 OpCode::Negate =>  {
-                    let n = self.stack.pop();
-                    self.stack.push(-n)
+                    if let Value::Number(n) = self.stack.pop() {
+                        self.stack.push(Value::Number(-n));
+                    } else {
+                        return Err(RuntimeError::TypeError(format!("Operand must be a number.")));
+                    }
+                    
                 }
                 OpCode::Add => {
                     let n2 = self.stack.pop();
@@ -76,7 +92,7 @@ impl VirtualMachine {
                 },
             }
         }
-        return InterpretResult::InterpretOk;
+        Ok(())
     }
 }
 
