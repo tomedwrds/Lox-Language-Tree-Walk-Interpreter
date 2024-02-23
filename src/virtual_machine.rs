@@ -14,30 +14,31 @@ pub enum InterpretResult {
 }
 
 enum RuntimeError {
-    TypeError(String)
+    TypeError(String, usize)
+}
+
+pub fn interpret_vm(src: String) -> InterpretResult {
+
+    if let Some(chunk) = compile(src) {
+        let mut vm = VirtualMachine {
+            chunk,
+            stack: Stack::default()
+        };
+        let program = vm.run(false);
+        if let Err(error) = program {
+            match error {
+                RuntimeError::TypeError(s, l) => println!("TYPE ERROR on line {}: {}",l, s)
+            }
+            return InterpretResult::InterpretRuntimeError
+        } else {
+            return InterpretResult::InterpretOk
+        }
+    } 
+    return InterpretResult::InterpretCompilerError
 }
 
 impl VirtualMachine {
-    pub fn interpret(&mut self, src: String) -> InterpretResult {
-
-        if let Some(chunk) = compile(src) {
-            self.chunk = chunk;
-            let program = self.run(false);
-            if let Err(error) = program {
-                match error {
-                    RuntimeError::TypeError(s) => println!("TYPE ERROR {}", s)
-                }
-                return InterpretResult::InterpretRuntimeError
-            } else {
-                return InterpretResult::InterpretOk
-            }
-        } 
-        return InterpretResult::InterpretCompilerError
-
-        
-
-        
-    }
+    
 
     fn run(&mut self, execution_tracing: bool) -> Result<(), RuntimeError> {
         let code = &self.chunk.code;
@@ -66,29 +67,42 @@ impl VirtualMachine {
                     if let Value::Number(n) = self.stack.pop() {
                         self.stack.push(Value::Number(-n));
                     } else {
-                        return Err(RuntimeError::TypeError(format!("Operand must be a number.")));
+                        return Err(RuntimeError::TypeError(format!("Operand must be a number."), *line_number));
                     }
                     
                 }
                 OpCode::Add => {
                     let n2 = self.stack.pop();
                     let n1 = self.stack.pop();
-                    self.stack.push(n1 + n2);
+                    match (n1, n2) {
+                        (Value::Number(n1), Value::Number(n2)) => self.stack.push(Value::Number(n1 + n2)),
+                        (Value::String(s1), Value::String(s2)) => self.stack.push(Value::String(s1 + &s2)),
+                        _ => return Err(RuntimeError::TypeError(format!("Operand must be either both string or number."), *line_number))
+                    }
                 },
                 OpCode::Subtract => {
                     let n2 = self.stack.pop();
                     let n1 = self.stack.pop();
-                    self.stack.push(n1 - n2);
+                    match (n1, n2) {
+                        (Value::Number(n1), Value::Number(n2)) => self.stack.push(Value::Number(n1 - n2)),
+                        _ => return Err(RuntimeError::TypeError(format!("Operand must be both number."), *line_number))
+                    }
                 },
                 OpCode::Multiply => {
                     let n2 = self.stack.pop();
                     let n1 = self.stack.pop();
-                    self.stack.push(n1 * n2);
+                    match (n1, n2) {
+                        (Value::Number(n1), Value::Number(n2)) => self.stack.push(Value::Number(n1*n2)),
+                        _ => return Err(RuntimeError::TypeError(format!("Operand must be both number."), *line_number))
+                    }
                 },
                 OpCode::Divide => {
                     let n2 = self.stack.pop();
                     let n1 = self.stack.pop();
-                    self.stack.push(n1 / n2);
+                    match (n1, n2) {
+                        (Value::Number(n1), Value::Number(n2)) => self.stack.push(Value::Number(n1/n2)),
+                        _ => return Err(RuntimeError::TypeError(format!("Operand must be both number."), *line_number))
+                    }
                 },
             }
         }

@@ -7,6 +7,7 @@ use bytecode::Value;
 use bytecode::OpCode;
 use compiler::compile;
 use debug::disassemble_chunk;
+use virtual_machine::interpret_vm;
 use virtual_machine::VirtualMachine;
 
 use crate::interpreter::interpret;
@@ -35,7 +36,10 @@ fn main() {
     let file = String::from("src/test.lox");
     let contents = fs::read_to_string(file)
         .expect("Error: file doesnt exist");
-    compile(contents);
+    
+    interpret_vm(contents);
+        
+    }
     // let chunk = Chunk {
     //     code: vec![
     //     (OpCode::Constant(0), 123),
@@ -48,13 +52,9 @@ fn main() {
     //     constant: vec![Constant::Number(1.2), Constant::Number(3.4), Constant::Number(5.6)]
     // };
 
-    // let mut vm = VirtualMachine {
-    //     chunk,
-    //     stack: Default::default()
-    // };
-    // vm.interpret();
+    
 
-}
+
 
 fn run_file(file_path: &String) {
 

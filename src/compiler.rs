@@ -8,11 +8,7 @@ pub fn compile(src: String) -> Option<Chunk> {
     compiler.consume(TokenType::EOF, format!("Expect end of expression"));
     
     compiler.end_compiler();
-    disassemble_chunk(&compiler.chunk, "test");
-    if !compiler.had_error {
-        return Some(compiler.chunk)
-    }
-    return None;
+    return Some(compiler.chunk);
 }
 
 struct Compiler {
