@@ -192,11 +192,9 @@ fn unary(compiler: &mut Compiler) {
     let operator = compiler.previous.token_type;
 
     //Compile the operand
-    compiler.expression();
-
-    //Emit the operator instruction
     compiler.parse_precedence(PRECEDENCE.unary);
 
+    //Emit the operator instruction
     match operator {
         TokenType::MINUS => compiler.emit_byte(OpCode::Negate),
         _ => ()

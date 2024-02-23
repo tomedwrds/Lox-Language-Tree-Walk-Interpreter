@@ -20,6 +20,7 @@ enum RuntimeError {
 pub fn interpret_vm(src: String) -> InterpretResult {
 
     if let Some(chunk) = compile(src) {
+        disassemble_chunk(&chunk, "Debug");
         let mut vm = VirtualMachine {
             chunk,
             stack: Stack::default()
