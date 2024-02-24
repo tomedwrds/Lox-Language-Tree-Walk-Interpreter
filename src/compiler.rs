@@ -4,8 +4,10 @@ use crate::{bytecode::{Chunk, OpCode, Value}, debug::disassemble_chunk, scanner:
 pub fn compile(src: String) -> Option<Chunk> {
     let mut compiler = compiler_initalize(src);
     compiler.advance();
-    compiler.expression();
-    compiler.consume(TokenType::EOF, format!("Expect end of expression"));
+   
+    while !compiler.token_match(TokenType::EOF) {
+        compiler.statement();
+    }
     
     compiler.end_compiler();
     return Some(compiler.chunk);
@@ -77,6 +79,31 @@ impl Compiler {
         self.parse_precedence(PRECEDENCE.assignment)
     }
 
+    fn declaration(&mut self) {
+        self.statement();
+    }
+
+    fn statement(&mut self) {
+       if self.token_match(TokenType::PRINT) {
+        self.statement_print()
+       }
+    }
+
+    fn statement_print(&mut self) {
+        self.expression();
+        self.consume(TokenType::SEMICOLON, format!("Expect ';' after value."));
+        self.emit_byte(OpCode::Print)
+    }
+
+    fn token_match(&mut self, token_type: TokenType) -> bool {
+        if self.current.token_type == token_type {
+            self.advance();
+            return true
+        }
+        return false
+    }
+
+
     fn parse_precedence(&mut self, precedence: u8) {
         self.advance();
         let prefix_rule = get_rules(self.previous.token_type).prefix;
@@ -146,7 +173,8 @@ fn get_rules(token: TokenType) -> Rule {
         TokenType::SLASH => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.factor },
         TokenType::STAR => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.factor },
         TokenType::BANG => Rule{prefix: Some(unary), infix: None, precedence: PRECEDENCE.none},
-        TokenType::NUMBER => Rule{prefix: Some(number), infix: None, precedence: PRECEDENCE.none },
+        TokenType::STRING => Rule{prefix: Some(value_literal), infix: None, precedence: PRECEDENCE.none},
+        TokenType::NUMBER => Rule{prefix: Some(value_literal), infix: None, precedence: PRECEDENCE.none },
         TokenType::FALSE => Rule{prefix: Some(literal), infix: None, precedence: PRECEDENCE.none},
         TokenType::TRUE => Rule{prefix: Some(literal), infix: None, precedence: PRECEDENCE.none},
         TokenType::NIL => Rule{prefix: Some(literal), infix: None, precedence: PRECEDENCE.none},
@@ -186,17 +214,18 @@ fn grouping(compiler: &mut Compiler) {
     compiler.consume(TokenType::RIGHT_PAREN, format!("Excpect ')' after expression."));
 }
 
-fn number(compiler: &mut Compiler) {
+fn value_literal(compiler: &mut Compiler) {
     //TODO: better error handling here (we can assume for now value set)
     let value = &compiler.previous.literal;
     if let Some(value_set) = value {
         match value_set {
             Literal::Number(num) => compiler.emit_constant(Value::Number(*num)),
-            Literal::Str(str) => panic!("String literal not supported yet")
+            Literal::Str(str) => compiler.emit_constant(Value::String(format!("{}",str)))
         }
     }
    
 } 
+
 
 fn unary(compiler: &mut Compiler) {
     let operator = compiler.previous.token_type;

@@ -54,7 +54,6 @@ impl VirtualMachine {
 
             match op_code {
                 OpCode::Return => {
-                    print!("{}\n", self.stack.pop());
                     return Ok(())
                 }, OpCode::Constant(index) => {
                     if let Some(constant) = constants.get(*index) {
@@ -132,6 +131,9 @@ impl VirtualMachine {
                         (Value::Number(n1), Value::Number(n2)) => self.stack.push(Value::Bool(n1 < n2)),
                         _ => return Err(RuntimeError::TypeError(format!("Operand must be both number."), *line_number))
                     }
+                }, OpCode::Print => {
+                    let v = self.stack.pop();
+                    println!("{}",v);
                 }
             }
         }

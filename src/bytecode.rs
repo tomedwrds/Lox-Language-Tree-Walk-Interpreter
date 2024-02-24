@@ -12,7 +12,8 @@ pub enum OpCode {
     Not,
     Equal,
     Greater,
-    Less
+    Less,
+    Print
 }
 
 pub struct Chunk {
