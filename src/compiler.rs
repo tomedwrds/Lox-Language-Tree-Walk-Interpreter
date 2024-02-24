@@ -145,7 +145,17 @@ fn get_rules(token: TokenType) -> Rule {
         TokenType::PLUS => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.term },
         TokenType::SLASH => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.factor },
         TokenType::STAR => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.factor },
+        TokenType::BANG => Rule{prefix: Some(unary), infix: None, precedence: PRECEDENCE.none},
         TokenType::NUMBER => Rule{prefix: Some(number), infix: None, precedence: PRECEDENCE.none },
+        TokenType::FALSE => Rule{prefix: Some(literal), infix: None, precedence: PRECEDENCE.none},
+        TokenType::TRUE => Rule{prefix: Some(literal), infix: None, precedence: PRECEDENCE.none},
+        TokenType::NIL => Rule{prefix: Some(literal), infix: None, precedence: PRECEDENCE.none},
+        TokenType::BANG_EQUAL => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.equality},
+        TokenType::EQUAL_EQUAL => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.equality},
+        TokenType::GREATER => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.comparison},
+        TokenType::GREATER_EQUAL => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.comparison},
+        TokenType::LESS => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.comparison},
+        TokenType::LESS_EQUAL => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.comparison},
         _ => Rule{prefix: None, infix: None, precedence: PRECEDENCE.none}
     }
 }
@@ -197,6 +207,7 @@ fn unary(compiler: &mut Compiler) {
     //Emit the operator instruction
     match operator {
         TokenType::MINUS => compiler.emit_byte(OpCode::Negate),
+        TokenType::BANG => compiler.emit_byte(OpCode::Not),
         _ => ()
     }
 }
@@ -211,7 +222,21 @@ fn binary(compiler: &mut Compiler) {
         TokenType::MINUS => compiler.emit_byte(OpCode::Subtract),
         TokenType::STAR => compiler.emit_byte(OpCode::Multiply),
         TokenType::SLASH => compiler.emit_byte(OpCode::Divide),
+        TokenType::BANG_EQUAL => compiler.emit_bytes(OpCode::Equal, OpCode::Not),
+        TokenType::EQUAL_EQUAL => compiler.emit_byte(OpCode::Equal),
+        TokenType::LESS => compiler.emit_byte(OpCode::Less),
+        TokenType::GREATER_EQUAL => compiler.emit_bytes(OpCode::Less, OpCode::Not),
+        TokenType::GREATER => compiler.emit_byte(OpCode::Greater),
+        TokenType::LESS_EQUAL => compiler.emit_bytes(OpCode::Greater, OpCode::Not),
         _ => ()
     }
+}
 
+fn literal(compiler: &mut Compiler) {
+    match compiler.previous.token_type {
+        TokenType::FALSE => compiler.emit_constant(Value::Bool(false)),
+        TokenType::NIL => compiler.emit_constant(Value::Nil),
+        TokenType::TRUE => compiler.emit_constant(Value::Bool(true)),
+        _ => ()
+    }
 }

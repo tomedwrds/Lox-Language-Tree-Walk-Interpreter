@@ -105,6 +105,34 @@ impl VirtualMachine {
                         _ => return Err(RuntimeError::TypeError(format!("Operand must be both number."), *line_number))
                     }
                 },
+                OpCode::Not => {
+                    if let Value::Bool(b) = self.stack.pop() {
+                        self.stack.push(Value::Bool(!b));
+                    } else {
+                        return Err(RuntimeError::TypeError(format!("Can only negate boolean values."), *line_number))
+                    }
+                },
+                OpCode::Equal => {
+                    let a = self.stack.pop();
+                    let b = self.stack.pop();
+                    self.stack.push(Value::Bool(a == b));
+                },
+                OpCode::Greater => {
+                    let n2 = self.stack.pop();
+                    let n1 = self.stack.pop();
+                    match (n1, n2) {
+                        (Value::Number(n1), Value::Number(n2)) => self.stack.push(Value::Bool(n1 > n2)),
+                        _ => return Err(RuntimeError::TypeError(format!("Operand must be both number."), *line_number))
+                    }
+                },
+                OpCode::Less => {
+                    let n2 = self.stack.pop();
+                    let n1 = self.stack.pop();
+                    match (n1, n2) {
+                        (Value::Number(n1), Value::Number(n2)) => self.stack.push(Value::Bool(n1 < n2)),
+                        _ => return Err(RuntimeError::TypeError(format!("Operand must be both number."), *line_number))
+                    }
+                }
             }
         }
         Ok(())

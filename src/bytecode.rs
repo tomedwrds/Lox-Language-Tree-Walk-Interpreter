@@ -8,7 +8,11 @@ pub enum OpCode {
     Add,
     Subtract,
     Multiply,
-    Divide
+    Divide,
+    Not,
+    Equal,
+    Greater,
+    Less
 }
 
 pub struct Chunk {
@@ -36,7 +40,7 @@ impl Chunk {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Value {
     Number(f64),
     Bool(bool),

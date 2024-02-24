@@ -17,5 +17,9 @@ pub fn disassemble_instruction(op_code: &OpCode, line: &usize, constants: &Vec<V
         OpCode::Subtract => print!("OP_SUBTRACT\n"),
         OpCode::Multiply => print!("OP_MULTIPLY\n"),
         OpCode::Divide => print!("OP_DIVIDE\n"),
+        OpCode::Not => print!("OP_NEGATE\n"),
+        OpCode::Less => print!("OP_LESS\n"),
+        OpCode::Equal => print!("OP_EQUAL\n"),
+        OpCode::Greater => print!("OP_GREATER\n")
     }
 }
