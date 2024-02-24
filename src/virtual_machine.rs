@@ -134,6 +134,11 @@ impl VirtualMachine {
                 }, OpCode::Print => {
                     let v = self.stack.pop();
                     println!("{}",v);
+                }, OpCode::Pop => {
+                    self.stack.pop();
+                },
+                OpCode::DefineGlobal(v) => {
+                    ()
                 }
             }
         }

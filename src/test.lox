@@ -1,1 +1,1 @@
-print 1 + 4 * 10;
+var test = 100;

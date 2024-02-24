@@ -6,7 +6,7 @@ pub fn compile(src: String) -> Option<Chunk> {
     compiler.advance();
    
     while !compiler.token_match(TokenType::EOF) {
-        compiler.statement();
+        compiler.declaration();
     }
     
     compiler.end_compiler();
@@ -80,12 +80,44 @@ impl Compiler {
     }
 
     fn declaration(&mut self) {
+        if self.token_match(TokenType::VAR) {
+            self.declaration_var();
+        }
         self.statement();
+        if self.panic_mode {
+            self.synchronize();
+        }
+    }
+
+    fn declaration_var(&mut self) {
+        let global = self.parse_variable(format!("Expect variable name."));
+
+        if self.token_match(TokenType::EQUAL) {
+            self.expression();
+        } else {
+            self.emit_constant(Value::Nil);
+        }
+
+        self.consume(TokenType::SEMICOLON, format!("Expect ';' after variable dec"));
+        self.define_variable(global);
+    }
+
+    fn parse_variable(&mut self, error_message: String) -> usize {
+        self.consume(TokenType::IDENTIFIER, error_message);
+        self.chunk.constant.push(Value::String(self.previous.lexeme.clone()));
+        return self.chunk.constant.len() - 1;
+
+    }
+
+    fn define_variable(&mut self, global: usize) {
+        self.emit_byte(OpCode::DefineGlobal(global))
     }
 
     fn statement(&mut self) {
        if self.token_match(TokenType::PRINT) {
         self.statement_print()
+       } else {
+        self.statement_expression()
        }
     }
 
@@ -93,6 +125,12 @@ impl Compiler {
         self.expression();
         self.consume(TokenType::SEMICOLON, format!("Expect ';' after value."));
         self.emit_byte(OpCode::Print)
+    }
+
+    fn statement_expression(&mut self) {
+        self.expression();
+        self.consume(TokenType::SEMICOLON, format!("Expect ';' after expression."));
+        self.emit_byte(OpCode::Pop);
     }
 
     fn token_match(&mut self, token_type: TokenType) -> bool {
@@ -149,6 +187,29 @@ impl Compiler {
         } 
         self.had_error = true;
     }
+
+    fn synchronize(&mut self) {
+        self.panic_mode = false;
+
+        while self.current.token_type != TokenType::EOF {
+            if self.previous.token_type == TokenType::SEMICOLON {
+                return;
+            }
+
+            match self.current.token_type {
+                TokenType::CLASS => return,
+                TokenType::FUN => return,
+                TokenType::VAR => return,
+                TokenType::FOR => return,
+                TokenType::IF => return,
+                TokenType::WHILE => return,
+                TokenType::PRINT => return,
+                TokenType::RETURN => return,
+                _ => ()
+            }
+            self.advance();
+        }
+     }
 }
 
 const PRECEDENCE: Precedence = Precedence {
@@ -219,8 +280,12 @@ fn value_literal(compiler: &mut Compiler) {
     let value = &compiler.previous.literal;
     if let Some(value_set) = value {
         match value_set {
-            Literal::Number(num) => compiler.emit_constant(Value::Number(*num)),
-            Literal::Str(str) => compiler.emit_constant(Value::String(format!("{}",str)))
+            Literal::Number(num) => {
+                compiler.emit_constant(Value::Number(*num)); 
+            },
+            Literal::Str(str) => {
+                compiler.emit_constant(Value::String(format!("{}",str)));
+            }
         }
     }
    

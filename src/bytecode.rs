@@ -13,7 +13,9 @@ pub enum OpCode {
     Equal,
     Greater,
     Less,
-    Print
+    Print,
+    Pop,
+    DefineGlobal(usize)
 }
 
 pub struct Chunk {

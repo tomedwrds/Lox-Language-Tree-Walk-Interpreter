@@ -21,6 +21,8 @@ pub fn disassemble_instruction(op_code: &OpCode, line: &usize, constants: &Vec<V
         OpCode::Less => print!("OP_LESS\n"),
         OpCode::Equal => print!("OP_EQUAL\n"),
         OpCode::Greater => print!("OP_GREATER\n"),
-        OpCode::Print => print!("OP_PRINT\n")
+        OpCode::Print => print!("OP_PRINT\n"),
+        OpCode::Pop => print!("OP_POP\n"),
+        OpCode::DefineGlobal(c) => print!("OP_DEFINE_GLOBAL {}\n", constants[*c]),
     }
 }
