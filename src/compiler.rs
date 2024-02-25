@@ -104,9 +104,14 @@ impl Compiler {
 
     fn parse_variable(&mut self, error_message: String) -> usize {
         self.consume(TokenType::IDENTIFIER, error_message);
-        self.chunk.constant.push(Value::String(self.previous.lexeme.clone()));
+        let identifier_constant = self.identifier_constant(&self.previous.clone());
+        self.chunk.constant.push(Value::String(identifier_constant));
         return self.chunk.constant.len() - 1;
 
+    }
+
+    fn identifier_constant(&mut self, token: &Token) -> String {
+        return token.lexeme.clone();
     }
 
     fn define_variable(&mut self, global: usize) {
@@ -235,6 +240,7 @@ fn get_rules(token: TokenType) -> Rule {
         TokenType::STAR => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.factor },
         TokenType::BANG => Rule{prefix: Some(unary), infix: None, precedence: PRECEDENCE.none},
         TokenType::STRING => Rule{prefix: Some(value_literal), infix: None, precedence: PRECEDENCE.none},
+        TokenType::IDENTIFIER => Rule { prefix: Some(variable), infix: None, precedence: PRECEDENCE.none },
         TokenType::NUMBER => Rule{prefix: Some(value_literal), infix: None, precedence: PRECEDENCE.none },
         TokenType::FALSE => Rule{prefix: Some(literal), infix: None, precedence: PRECEDENCE.none},
         TokenType::TRUE => Rule{prefix: Some(literal), infix: None, precedence: PRECEDENCE.none},
@@ -333,4 +339,13 @@ fn literal(compiler: &mut Compiler) {
         TokenType::TRUE => compiler.emit_constant(Value::Bool(true)),
         _ => ()
     }
+}
+
+fn variable(compiler: &mut Compiler) {
+    named_variable(compiler, &compiler.previous.clone());
+}
+
+fn named_variable(compiler: &mut Compiler, token: &Token) {
+    let arg = compiler.identifier_constant(&token);
+    compiler.emit_byte(OpCode::GetGlobal(arg));
 }

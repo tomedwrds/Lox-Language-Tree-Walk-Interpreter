@@ -1,10 +1,11 @@
-use std::default;
+use std::{collections::HashMap, default, env::VarError};
 
 use crate::{bytecode::{Chunk, OpCode, Value}, compiler::compile, debug::{disassemble_chunk, disassemble_instruction}};
 
 pub struct VirtualMachine {
     pub chunk: Chunk,
-    pub stack: Stack
+    pub stack: Stack,
+    globals: HashMap<String, Value>
 }
 
 pub enum InterpretResult {
@@ -14,7 +15,8 @@ pub enum InterpretResult {
 }
 
 enum RuntimeError {
-    TypeError(String, usize)
+    TypeError(String, usize),
+    VarError(String, usize)
 }
 
 pub fn interpret_vm(src: String) -> InterpretResult {
@@ -23,12 +25,14 @@ pub fn interpret_vm(src: String) -> InterpretResult {
         disassemble_chunk(&chunk, "Debug");
         let mut vm = VirtualMachine {
             chunk,
-            stack: Stack::default()
+            stack: Stack::default(),
+            globals: HashMap::new()
         };
         let program = vm.run(false);
         if let Err(error) = program {
             match error {
-                RuntimeError::TypeError(s, l) => println!("TYPE ERROR on line {}: {}",l, s)
+                RuntimeError::TypeError(s, l) => println!("TYPE ERROR on line {}: {}",l, s),
+                RuntimeError::VarError(s, l) => println!("VAR ERROR on line {}: {}",l, s)
             }
             return InterpretResult::InterpretRuntimeError
         } else {
@@ -137,8 +141,23 @@ impl VirtualMachine {
                 }, OpCode::Pop => {
                     self.stack.pop();
                 },
-                OpCode::DefineGlobal(v) => {
-                    ()
+                OpCode::DefineGlobal(index) => {
+                    if let Some(Value::String(var_name)) = constants.get(*index) {
+                        let var_value = self.stack.peek();
+                        self.globals.insert(var_name.to_string(), var_value);
+                        self.stack.pop();
+                    } else {
+                        //TODO: Add better error handling
+                        panic!("Cant find var name")
+                    }
+                },
+                OpCode::GetGlobal(name) => {
+                    if let Some(value) = self.globals.get(name) {
+                        self.stack.push(value.clone());
+                    } else {
+                        return Err(RuntimeError::VarError(format!("Undefined variable {}",name), *line_number))
+                    }
+
                 }
             }
         }
@@ -171,6 +190,11 @@ impl Stack {
 
     pub fn pop(&mut self) -> Value {
         return self.stack_vec.pop().unwrap();
+    }
+
+    pub fn peek(&mut self) -> Value {
+        //TODO improve this code
+        return self.stack_vec.get(self.stack_vec.len() - 1).unwrap().clone();
     }
 
     pub fn push(&mut self, value: Value){
