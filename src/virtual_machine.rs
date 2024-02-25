@@ -158,6 +158,14 @@ impl VirtualMachine {
                         return Err(RuntimeError::VarError(format!("Undefined variable {}",name), *line_number))
                     }
 
+                },
+                OpCode::SetGlobal(name) => {
+                    if let Some(value) = self.globals.get(name) {
+                        let var_value = self.stack.peek();
+                        self.globals.insert(name.clone(), var_value);
+                    } else {
+                        return Err(RuntimeError::VarError(format!("Undefined variable {}",name), *line_number))
+                    }
                 }
             }
         }

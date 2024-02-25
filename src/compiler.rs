@@ -152,14 +152,20 @@ impl Compiler {
         self.advance();
         let prefix_rule = get_rules(self.previous.token_type).prefix;
         if let Some(prefix_func) = prefix_rule {
-            prefix_func(self);
+            
+            let can_assign = precedence <= PRECEDENCE.assignment;
+            prefix_func(self,can_assign);
 
             while precedence <= get_rules(self.current.token_type).precedence {
                 self.advance();
                 let infix_rule =get_rules(self.previous.token_type).infix;
                 if let Some(infix_func) = infix_rule {
-                    infix_func(self);
+                    infix_func(self, can_assign);
                 }
+
+                if can_assign && self.token_match(TokenType::EQUAL) {
+                    self.parse_error(self.current.clone(), Some(format!("Invalid assignment target.")));
+                  }
             }
         } else {
             self.parse_error(self.previous.clone(), Some(format!("Expect expression.")))
@@ -257,8 +263,8 @@ fn get_rules(token: TokenType) -> Rule {
 }
 
 struct Rule {
-    prefix: Option<fn(&mut Compiler) -> ()>,
-    infix: Option<fn(&mut Compiler) -> ()>,
+    prefix: Option<fn(&mut Compiler, can_assign: bool) -> ()>,
+    infix: Option<fn(&mut Compiler, can_assign: bool) -> ()>,
     precedence: u8
 }
 
@@ -277,12 +283,12 @@ struct Precedence {
 }
 
 
-fn grouping(compiler: &mut Compiler) {
+fn grouping(compiler: &mut Compiler, can_assign: bool) {
     compiler.expression();
     compiler.consume(TokenType::RIGHT_PAREN, format!("Excpect ')' after expression."));
 }
 
-fn value_literal(compiler: &mut Compiler) {
+fn value_literal(compiler: &mut Compiler, can_assign: bool) {
     //TODO: better error handling here (we can assume for now value set)
     let value = &compiler.previous.literal;
     if let Some(value_set) = value {
@@ -299,7 +305,7 @@ fn value_literal(compiler: &mut Compiler) {
 } 
 
 
-fn unary(compiler: &mut Compiler) {
+fn unary(compiler: &mut Compiler, can_assign: bool) {
     let operator = compiler.previous.token_type;
 
     //Compile the operand
@@ -313,7 +319,7 @@ fn unary(compiler: &mut Compiler) {
     }
 }
 
-fn binary(compiler: &mut Compiler) {
+fn binary(compiler: &mut Compiler, can_assign: bool) {
     let operator_type = compiler.previous.token_type;
     let rule = get_rules(operator_type);
     compiler.parse_precedence(rule.precedence + 1);
@@ -333,7 +339,7 @@ fn binary(compiler: &mut Compiler) {
     }
 }
 
-fn literal(compiler: &mut Compiler) {
+fn literal(compiler: &mut Compiler, can_assign: bool) {
     match compiler.previous.token_type {
         TokenType::FALSE => compiler.emit_constant(Value::Bool(false)),
         TokenType::NIL => compiler.emit_constant(Value::Nil),
@@ -342,11 +348,17 @@ fn literal(compiler: &mut Compiler) {
     }
 }
 
-fn variable(compiler: &mut Compiler) {
-    named_variable(compiler, &compiler.previous.clone());
+fn variable(compiler: &mut Compiler, can_assign: bool) {
+    named_variable(compiler, &compiler.previous.clone(), can_assign);
 }
 
-fn named_variable(compiler: &mut Compiler, token: &Token) {
+fn named_variable(compiler: &mut Compiler, token: &Token, can_assign: bool) {
     let arg = compiler.identifier_constant(&token);
-    compiler.emit_byte(OpCode::GetGlobal(arg));
+
+    if compiler.token_match(TokenType::EQUAL) && can_assign {
+        compiler.expression();
+        compiler.emit_byte(OpCode::SetGlobal(arg))
+    } else {
+        compiler.emit_byte(OpCode::GetGlobal(arg));
+    }
 }
