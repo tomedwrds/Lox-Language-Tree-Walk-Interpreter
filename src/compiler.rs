@@ -82,8 +82,9 @@ impl Compiler {
     fn declaration(&mut self) {
         if self.token_match(TokenType::VAR) {
             self.declaration_var();
+        } else {
+            self.statement();
         }
-        self.statement();
         if self.panic_mode {
             self.synchronize();
         }
