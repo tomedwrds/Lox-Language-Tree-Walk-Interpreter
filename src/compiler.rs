@@ -24,10 +24,12 @@ struct Compiler {
     scope_depth: u32,
 }
 
-struct Local {
-    name: Token,
-    depth: u32
+#[derive(Clone, PartialEq)]
+pub struct Local {
+    pub name: Token,
+    pub depth: u32
 }
+
 
 fn compiler_initalize(src: String) -> Compiler {
     Compiler {
@@ -114,6 +116,13 @@ impl Compiler {
 
     fn parse_variable(&mut self, error_message: String) -> usize {
         self.consume(TokenType::IDENTIFIER, error_message);
+
+        self.declare_variable();
+        
+        if self.scope_depth > 0 {
+            return 0
+        }
+
         let identifier_constant = self.identifier_constant(&self.previous.clone());
         self.chunk.constant.push(Value::String(identifier_constant));
         return self.chunk.constant.len() - 1;
@@ -124,7 +133,27 @@ impl Compiler {
         return token.lexeme.clone();
     }
 
+    fn declare_variable(&mut self) {
+        if self.scope_depth == 0 {
+            return;
+        }
+
+        let token = self.previous.clone();
+        self.add_local(token);
+    }
+
+    fn add_local(&mut self, token: Token) {
+        let local =  Local {name: token, depth: self.scope_depth};
+        if self.locals.contains(&local) {
+            self.parse_error(self.current.clone(), Some(format!("Already a variable with this name in this scope")));
+        }
+        self.locals.push(local);
+    }
+
     fn define_variable(&mut self, global: usize) {
+        if self.scope_depth > 0 {
+            return;
+        }
         self.emit_byte(OpCode::DefineGlobal(global))
     }
 
@@ -166,6 +195,12 @@ impl Compiler {
 
     fn end_scope(&mut self) {
         self.scope_depth -= 1;
+        let mut local_count = self.locals.len();
+        while local_count > 0 && self.locals[local_count - 1].depth > self.scope_depth {
+            self.emit_byte(OpCode::Pop);
+            self.locals.pop();
+            local_count -= 1;
+        }
     }
 
     fn token_match(&mut self, token_type: TokenType) -> bool {
@@ -204,6 +239,41 @@ impl Compiler {
     fn emit_constant(&mut self, value: Value) {
         self.chunk.constant.push(value);
         self.emit_byte(OpCode::Constant(self.chunk.constant.len() - 1));
+    }
+
+    fn named_variable(&mut self, token: &Token, can_assign: bool) {    
+        let get_op: OpCode;
+        let set_op: OpCode;
+
+        if let Some(arg) = self.resolve_local(&token) {
+            get_op = OpCode::GetLocal(arg);
+            set_op = OpCode::SetLocal(arg);
+        } else {
+            let name_arg = self.identifier_constant(&token);
+            get_op = OpCode::GetGlobal(name_arg.clone());
+            set_op = OpCode::SetGlobal(name_arg);
+        }
+    
+    
+        if self.token_match(TokenType::EQUAL) && can_assign {
+            self.expression();
+            self.emit_byte(set_op)
+        } else {
+            self.emit_byte(get_op);
+        }
+    }
+
+    fn resolve_local(&mut self, token: &Token) -> Option<usize> {
+        let mut local_count = self.locals.len();
+        while local_count > 0 {
+            if let Some(value) = self.locals.get(local_count - 1) {
+                if value.name.lexeme == *token.lexeme {
+                    return Some(local_count)
+                }
+            }
+            local_count -= 1;
+        }
+        return None
     }
 
     fn parse_error_token(&mut self, token: Token) {
@@ -378,16 +448,6 @@ fn literal(compiler: &mut Compiler, can_assign: bool) {
 }
 
 fn variable(compiler: &mut Compiler, can_assign: bool) {
-    named_variable(compiler, &compiler.previous.clone(), can_assign);
+    compiler.named_variable(&compiler.previous.clone(), can_assign);
 }
 
-fn named_variable(compiler: &mut Compiler, token: &Token, can_assign: bool) {
-    let arg = compiler.identifier_constant(&token);
-
-    if compiler.token_match(TokenType::EQUAL) && can_assign {
-        compiler.expression();
-        compiler.emit_byte(OpCode::SetGlobal(arg))
-    } else {
-        compiler.emit_byte(OpCode::GetGlobal(arg));
-    }
-}

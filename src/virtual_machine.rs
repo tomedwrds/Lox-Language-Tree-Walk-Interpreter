@@ -166,7 +166,19 @@ impl VirtualMachine {
                     } else {
                         return Err(RuntimeError::VarError(format!("Undefined variable {}",name), *line_number))
                     }
-                }
+                },
+                OpCode::GetLocal(index) => {
+                    if let Some(value) = self.stack.get(index) {
+                        self.stack.push(value.clone());
+                    } else {
+                        return Err(RuntimeError::VarError(format!("Undefined variable"), *line_number))
+                    }
+                },
+                OpCode::SetLocal(index) => {
+                    let value = self.stack.peek();
+                    self.stack.set(index, value);
+                    
+                },
             }
         }
         Ok(())
@@ -214,6 +226,14 @@ impl Stack {
         for value in &self.stack_vec {
             print!("[{}]",value);
         }
+    }
+
+    pub fn get(&mut self, index: &usize) -> Option<Value> {
+        return self.stack_vec.get(*index).cloned();
+    }
+
+    pub fn set(&mut self, index: &usize, value: Value) {
+        self.stack_vec[*index] = value;
     }
 }
 

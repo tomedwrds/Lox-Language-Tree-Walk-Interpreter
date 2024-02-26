@@ -17,7 +17,9 @@ pub enum OpCode {
     Pop,
     DefineGlobal(usize),
     GetGlobal(String),
-    SetGlobal(String)
+    SetGlobal(String),
+    GetLocal(usize),
+    SetLocal(usize)
 }
 
 pub struct Chunk {

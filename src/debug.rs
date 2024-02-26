@@ -26,5 +26,7 @@ pub fn disassemble_instruction(op_code: &OpCode, line: &usize, constants: &Vec<V
         OpCode::DefineGlobal(c) => print!("OP_DEFINE_GLOBAL {}\n", constants[*c]),
         OpCode::GetGlobal(n) => print!("OP_GET_GLOBAL {}\n",n),
         OpCode::SetGlobal(n) => print!("OP_SET_GLOBAL {}\n",n),
+        OpCode::GetLocal(n) => print!("OP_GET_LOCAL {}\n",n),
+        OpCode::SetLocal(n) => print!("OP_SET_LOCAL {}\n",n),
     }
 }
