@@ -20,6 +20,13 @@ struct Compiler {
     panic_mode: bool,
     chunk: Chunk,
     scanner: Scanner,
+    locals: Vec<Local>,
+    scope_depth: u32,
+}
+
+struct Local {
+    name: Token,
+    depth: u32
 }
 
 fn compiler_initalize(src: String) -> Compiler {
@@ -30,6 +37,8 @@ fn compiler_initalize(src: String) -> Compiler {
         panic_mode: false,
         chunk: Chunk::default(),
         scanner: scan(src),
+        scope_depth: 0,
+        locals: Vec::new()
     }
 }
 
@@ -122,9 +131,21 @@ impl Compiler {
     fn statement(&mut self) {
        if self.token_match(TokenType::PRINT) {
         self.statement_print()
+       } else if self.token_match(TokenType::LEFT_BRACE) {
+        self.begin_scope();
+        self.statement_block();
+        self.end_scope();
        } else {
         self.statement_expression()
        }
+    }
+
+    fn statement_block(&mut self) {
+        while !(self.current.token_type == TokenType::RIGHT_BRACE || self.current.token_type == TokenType::EOF) {
+            self.declaration();
+        }
+
+        self.consume(TokenType::RIGHT_BRACE, format!("Expect '}}' after block."));
     }
 
     fn statement_print(&mut self) {
@@ -137,6 +158,14 @@ impl Compiler {
         self.expression();
         self.consume(TokenType::SEMICOLON, format!("Expect ';' after expression."));
         self.emit_byte(OpCode::Pop);
+    }
+
+    fn begin_scope(&mut self) {
+        self.scope_depth += 1;
+    }
+
+    fn end_scope(&mut self) {
+        self.scope_depth -= 1;
     }
 
     fn token_match(&mut self, token_type: TokenType) -> bool {
