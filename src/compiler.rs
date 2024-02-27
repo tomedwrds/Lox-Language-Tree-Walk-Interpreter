@@ -24,7 +24,7 @@ struct Compiler {
     scope_depth: u32,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Local {
     pub name: Token,
     pub depth: u32
@@ -268,7 +268,7 @@ impl Compiler {
         while local_count > 0 {
             if let Some(value) = self.locals.get(local_count - 1) {
                 if value.name.lexeme == *token.lexeme {
-                    return Some(local_count)
+                    return Some(local_count-1)
                 }
             }
             local_count -= 1;
