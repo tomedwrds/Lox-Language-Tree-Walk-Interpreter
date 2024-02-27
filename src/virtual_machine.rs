@@ -5,9 +5,14 @@ use crate::{bytecode::{Chunk, OpCode, Value}, compiler::compile, debug::{disasse
 pub struct VirtualMachine {
     pub chunk: Chunk,
     pub stack: Stack,
-    globals: HashMap<String, Value>
+    globals: HashMap<String, Global>
 }
 
+
+struct Global {
+    value: Value,
+    is_const: bool
+}
 pub enum InterpretResult {
     InterpretOk,
     InterpretCompilerError,
@@ -141,10 +146,12 @@ impl VirtualMachine {
                 }, OpCode::Pop => {
                     self.stack.pop();
                 },
-                OpCode::DefineGlobal(index) => {
+                OpCode::DefineGlobal(index, is_const) => {
                     if let Some(Value::String(var_name)) = constants.get(*index) {
                         let var_value = self.stack.peek();
-                        self.globals.insert(var_name.to_string(), var_value);
+                        self.globals.insert(var_name.to_string(), Global {
+                            value: var_value,
+                            is_const: *is_const});
                         self.stack.pop();
                     } else {
                         //TODO: Add better error handling
@@ -152,17 +159,20 @@ impl VirtualMachine {
                     }
                 },
                 OpCode::GetGlobal(name) => {
-                    if let Some(value) = self.globals.get(name) {
-                        self.stack.push(value.clone());
+                    if let Some(global) = self.globals.get(name) {
+                        self.stack.push(global.value.clone());
                     } else {
                         return Err(RuntimeError::VarError(format!("Undefined variable {}",name), *line_number))
                     }
 
                 },
                 OpCode::SetGlobal(name) => {
-                    if let Some(value) = self.globals.get(name) {
-                        let var_value = self.stack.peek();
-                        self.globals.insert(name.clone(), var_value);
+                    if let Some(global) = self.globals.get(name) {
+                        if global.is_const {
+                            return Err(RuntimeError::VarError(format!("Cannot reassign const variable {}",name), *line_number));
+                        }
+                        let value = self.stack.peek();
+                        self.globals.insert(name.clone(), Global { value, is_const: global.is_const});
                     } else {
                         return Err(RuntimeError::VarError(format!("Undefined variable {}",name), *line_number))
                     }

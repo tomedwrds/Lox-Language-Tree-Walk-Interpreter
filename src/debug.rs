@@ -23,7 +23,7 @@ pub fn disassemble_instruction(op_code: &OpCode, line: &usize, constants: &Vec<V
         OpCode::Greater => print!("OP_GREATER\n"),
         OpCode::Print => print!("OP_PRINT\n"),
         OpCode::Pop => print!("OP_POP\n"),
-        OpCode::DefineGlobal(c) => print!("OP_DEFINE_GLOBAL {}\n", constants[*c]),
+        OpCode::DefineGlobal(c,b) => print!("OP_DEFINE_GLOBAL {} {}\n", constants[*c], if *b { "CONST" } else { "VAR" }),
         OpCode::GetGlobal(n) => print!("OP_GET_GLOBAL {}\n",n),
         OpCode::SetGlobal(n) => print!("OP_SET_GLOBAL {}\n",n),
         OpCode::GetLocal(n) => print!("OP_GET_LOCAL {}\n",n),

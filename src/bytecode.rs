@@ -15,7 +15,7 @@ pub enum OpCode {
     Less,
     Print,
     Pop,
-    DefineGlobal(usize),
+    DefineGlobal(usize, bool),
     GetGlobal(String),
     SetGlobal(String),
     GetLocal(usize),

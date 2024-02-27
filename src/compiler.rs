@@ -27,7 +27,8 @@ struct Compiler {
 #[derive(Clone, PartialEq, Debug)]
 pub struct Local {
     pub name: Token,
-    pub depth: i32
+    pub depth: i32,
+    is_const: bool
 }
 
 
@@ -92,7 +93,9 @@ impl Compiler {
 
     fn declaration(&mut self) {
         if self.token_match(TokenType::VAR) {
-            self.declaration_var();
+            self.declaration_var(false);
+        } else if self.token_match(TokenType::CONST) {
+            self.declaration_var(true);
         } else {
             self.statement();
         }
@@ -101,8 +104,8 @@ impl Compiler {
         }
     }
 
-    fn declaration_var(&mut self) {
-        let global = self.parse_variable(format!("Expect variable name."));
+    fn declaration_var(&mut self, is_const: bool) {
+        let global = self.parse_variable(format!("Expect variable name."), is_const);
 
         if self.token_match(TokenType::EQUAL) {
             self.expression();
@@ -111,13 +114,13 @@ impl Compiler {
         }
 
         self.consume(TokenType::SEMICOLON, format!("Expect ';' after variable dec"));
-        self.define_variable(global);
+        self.define_variable(global, is_const);
     }
 
-    fn parse_variable(&mut self, error_message: String) -> usize {
+    fn parse_variable(&mut self, error_message: String, is_const: bool) -> usize {
         self.consume(TokenType::IDENTIFIER, error_message);
 
-        self.declare_variable();
+        self.declare_variable(is_const);
         
         if self.scope_depth > 0 {
             return 0
@@ -133,29 +136,29 @@ impl Compiler {
         return token.lexeme.clone();
     }
 
-    fn declare_variable(&mut self) {
+    fn declare_variable(&mut self, is_const: bool) {
         if self.scope_depth == 0 {
             return;
         }
 
         let token = self.previous.clone();
-        self.add_local(token);
+        self.add_local(token, is_const);
     }
 
-    fn add_local(&mut self, token: Token) {
-        let local =  Local {name: token, depth: -1};
+    fn add_local(&mut self, token: Token, is_const: bool) {
+        let local =  Local {name: token, depth: -1, is_const};
         if self.locals.contains(&local) {
             self.parse_error(self.current.clone(), Some(format!("Already a variable with this name in this scope")));
         }
         self.locals.push(local);
     }
 
-    fn define_variable(&mut self, global: usize) {
+    fn define_variable(&mut self, global: usize, is_const: bool) {
         if self.scope_depth > 0 {
             self.mark_initalized();
             return;
         }
-        self.emit_byte(OpCode::DefineGlobal(global))
+        self.emit_byte(OpCode::DefineGlobal(global, is_const))
     }
 
     fn mark_initalized(&mut self) {
@@ -165,11 +168,13 @@ impl Compiler {
 
     fn statement(&mut self) {
        if self.token_match(TokenType::PRINT) {
-        self.statement_print()
+        self.statement_print();
+
        } else if self.token_match(TokenType::LEFT_BRACE) {
         self.begin_scope();
         self.statement_block();
         self.end_scope();
+
        } else {
         self.statement_expression()
        }
@@ -254,6 +259,9 @@ impl Compiler {
         if let Some(arg) = self.resolve_local(&token) {
             get_op = OpCode::GetLocal(arg);
             set_op = OpCode::SetLocal(arg);
+            if self.locals[arg].is_const {
+                self.parse_error(self.previous.clone(), Some(format!("Can't reassign constant variable.")));
+            }
         } else {
             let name_arg = self.identifier_constant(&token);
             get_op = OpCode::GetGlobal(name_arg.clone());

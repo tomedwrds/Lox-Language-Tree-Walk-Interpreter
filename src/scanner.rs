@@ -48,6 +48,7 @@ pub enum TokenType {
   THIS, 
   TRUE, 
   VAR, 
+  CONST,
   WHILE,
 
   EOF,
@@ -126,6 +127,7 @@ impl Default for Scanner {
             (String::from("true"), TokenType::TRUE),
             (String::from("var"), TokenType::VAR),
             (String::from("while"), TokenType::WHILE),
+            (String::from("const"), TokenType::CONST),
         ])
       }
   }
