@@ -21,13 +21,13 @@ struct Compiler {
     chunk: Chunk,
     scanner: Scanner,
     locals: Vec<Local>,
-    scope_depth: u32,
+    scope_depth: i32,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Local {
     pub name: Token,
-    pub depth: u32
+    pub depth: i32
 }
 
 
@@ -143,7 +143,7 @@ impl Compiler {
     }
 
     fn add_local(&mut self, token: Token) {
-        let local =  Local {name: token, depth: self.scope_depth};
+        let local =  Local {name: token, depth: -1};
         if self.locals.contains(&local) {
             self.parse_error(self.current.clone(), Some(format!("Already a variable with this name in this scope")));
         }
@@ -152,9 +152,15 @@ impl Compiler {
 
     fn define_variable(&mut self, global: usize) {
         if self.scope_depth > 0 {
+            self.mark_initalized();
             return;
         }
         self.emit_byte(OpCode::DefineGlobal(global))
+    }
+
+    fn mark_initalized(&mut self) {
+        let index = self.locals.len() - 1;
+        self.locals[index].depth = self.scope_depth;
     }
 
     fn statement(&mut self) {
@@ -268,6 +274,9 @@ impl Compiler {
         while local_count > 0 {
             if let Some(value) = self.locals.get(local_count - 1) {
                 if value.name.lexeme == *token.lexeme {
+                    if self.locals[local_count-1].depth == -1 {
+                        self.parse_error(self.previous.clone(), Some(format!("Can't read local variable in its own initializer.")));
+                    }
                     return Some(local_count-1)
                 }
             }
