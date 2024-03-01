@@ -103,7 +103,7 @@ impl Compiler {
             self.declaration_var(true);
 
         } else {
-            self.statement(false);
+            self.statement(self.in_loop);
         }
         if self.panic_mode {
             self.synchronize();
@@ -212,7 +212,7 @@ impl Compiler {
             self.consume(TokenType::COLON, format!("Expect ':' after 'case'."));
             let case_jump = self.emit_jump(OpCode::SwitchJump(0xff));
             
-            self.statement(false);
+            self.statement(self.in_loop);
             let jump_index = self.emit_jump(OpCode::Jump(0xff));
             case_end_jumps.push(jump_index);
 
@@ -221,7 +221,7 @@ impl Compiler {
 
         self.consume(TokenType::DEFAULT, format!("Expect 'default' at end of switch."));
         self.consume(TokenType::COLON, format!("Expect ':' after 'swtich'."));
-        self.statement(false);
+        self.statement(self.in_loop);
 
         self.consume(TokenType::RIGHT_BRACE, format!("Expect '}}' at end of switch."));
 
@@ -306,14 +306,14 @@ impl Compiler {
 
         let then_jump = self.emit_jump(OpCode::JumpIfFalse(0xff));
         self.emit_byte(OpCode::Pop);
-        self.statement(false);
+        self.statement(self.in_loop);
 
         let else_jump = self.emit_jump(OpCode::Jump(0xff));
         self.patch_jump(then_jump);
         self.emit_byte(OpCode::Pop);
 
         if self.token_match(TokenType::ELSE) {
-            self.statement(false);
+            self.statement(self.in_loop);
         }
         self.patch_jump(else_jump);
     }
