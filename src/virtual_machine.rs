@@ -212,6 +212,15 @@ impl VirtualMachine {
                     if n1 != n2 {
                         ip += jump_size;
                     }
+                },
+                OpCode::Break => {
+                    while true {
+                        let (next_opcode, _) = &code[ip];
+                        ip += 1;
+                        if let OpCode::Loop(_) = next_opcode {
+                            break;
+                        }
+                    }
                 }
             }
             ip += 1;

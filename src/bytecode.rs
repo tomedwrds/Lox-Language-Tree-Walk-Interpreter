@@ -1,6 +1,6 @@
 use core::fmt;
 use std::{fmt::Display, ops::{Add, Div, Mul, Neg, Sub}, vec};
-
+#[derive(PartialEq)]
 pub enum OpCode {
     Return,
     Constant(usize),
@@ -23,7 +23,8 @@ pub enum OpCode {
     JumpIfFalse(usize),
     Jump(usize),
     Loop(usize),
-    SwitchJump(usize)
+    SwitchJump(usize),
+    Break
 }
 
 pub struct Chunk {

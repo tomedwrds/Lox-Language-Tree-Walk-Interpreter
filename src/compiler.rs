@@ -24,6 +24,7 @@ struct Compiler {
     scanner: Scanner,
     locals: Vec<Local>,
     scope_depth: i32,
+    in_loop: bool
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -43,7 +44,8 @@ fn compiler_initalize(src: String) -> Compiler {
         chunk: Chunk::default(),
         scanner: scan(src),
         scope_depth: 0,
-        locals: Vec::new()
+        locals: Vec::new(),
+        in_loop: false
     }
 }
 
@@ -101,7 +103,7 @@ impl Compiler {
             self.declaration_var(true);
 
         } else {
-            self.statement();
+            self.statement(false);
         }
         if self.panic_mode {
             self.synchronize();
@@ -170,7 +172,7 @@ impl Compiler {
         self.locals[index].depth = self.scope_depth;
     }
 
-    fn statement(&mut self) {
+    fn statement(&mut self, in_loop: bool) {
         if self.token_match(TokenType::PRINT) {
             self.statement_print();
         } else if self.token_match(TokenType::IF) {
@@ -182,10 +184,16 @@ impl Compiler {
         } else if self.token_match(TokenType::FOR) {
             self.statement_for();
         } else if self.token_match(TokenType::LEFT_BRACE) {
-            self.begin_scope();
+            self.begin_scope(in_loop);
             self.statement_block();
             self.end_scope();
-
+        } else if self.token_match(TokenType::BREAK) {
+            if !self.in_loop {
+                self.parse_error(self.previous.clone(), Some(format!("Break statements only allowed in 'for' or 'while' loops.")));
+            } else {
+                self.consume(TokenType::SEMICOLON, format!("Expect ';' after 'break'."));
+                self.emit_byte(OpCode::Break);
+            }
         } else {
             self.statement_expression()
         }
@@ -204,7 +212,7 @@ impl Compiler {
             self.consume(TokenType::COLON, format!("Expect ':' after 'case'."));
             let case_jump = self.emit_jump(OpCode::SwitchJump(0xff));
             
-            self.statement();
+            self.statement(false);
             let jump_index = self.emit_jump(OpCode::Jump(0xff));
             case_end_jumps.push(jump_index);
 
@@ -213,7 +221,7 @@ impl Compiler {
 
         self.consume(TokenType::DEFAULT, format!("Expect 'default' at end of switch."));
         self.consume(TokenType::COLON, format!("Expect ':' after 'swtich'."));
-        self.statement();
+        self.statement(false);
 
         self.consume(TokenType::RIGHT_BRACE, format!("Expect '}}' at end of switch."));
 
@@ -226,7 +234,7 @@ impl Compiler {
     }
 
     fn statement_for(&mut self) {
-        self.begin_scope();
+        self.begin_scope(true);
         self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'for'."));
 
 
@@ -262,7 +270,7 @@ impl Compiler {
 
         }
 
-        self.statement();
+        self.statement(true);
         self.emit_loop(loop_start);
 
         if let Some(some_exit_jump) = exit_jump {
@@ -274,13 +282,13 @@ impl Compiler {
 
     fn statement_while(&mut self) {
         let loop_start = self.chunk.code.len() - 1;
-        self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'if'."));
+        self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'while'."));
         self.expression();
         self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after condition."));
 
         let exit_jump = self.emit_jump(OpCode::JumpIfFalse(0xff));
         self.emit_byte(OpCode::Pop);
-        self.statement();
+        self.statement(true);
         self.emit_loop(loop_start);
 
         self.patch_jump(exit_jump);
@@ -298,14 +306,14 @@ impl Compiler {
 
         let then_jump = self.emit_jump(OpCode::JumpIfFalse(0xff));
         self.emit_byte(OpCode::Pop);
-        self.statement();
+        self.statement(false);
 
         let else_jump = self.emit_jump(OpCode::Jump(0xff));
         self.patch_jump(then_jump);
         self.emit_byte(OpCode::Pop);
 
         if self.token_match(TokenType::ELSE) {
-            self.statement();
+            self.statement(false);
         }
         self.patch_jump(else_jump);
     }
@@ -347,8 +355,9 @@ impl Compiler {
         self.emit_byte(OpCode::Pop);
     }
 
-    fn begin_scope(&mut self) {
+    fn begin_scope(&mut self, in_loop: bool) {
         self.scope_depth += 1;
+        self.in_loop = in_loop;
     }
 
     fn end_scope(&mut self) {
@@ -359,6 +368,7 @@ impl Compiler {
             self.locals.pop();
             local_count -= 1;
         }
+        self.in_loop = false;
     }
 
     fn token_match(&mut self, token_type: TokenType) -> bool {

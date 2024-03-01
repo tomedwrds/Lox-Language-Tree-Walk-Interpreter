@@ -1,5 +1,13 @@
-switch(1+4) {
-    case 5: print "hello";
-    case 5: print "nuts";
-    default: print "dead";
+{
+    var u = "hello";
+
+    for (var i = 0; i < 10; i = i + 1) {
+        var a = 1;
+        var b = 2;
+        var c = 3;
+        print i;
+        break;
+    }
+
+    print u;
 }

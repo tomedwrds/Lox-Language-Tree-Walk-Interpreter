@@ -54,6 +54,8 @@ pub enum TokenType {
   SWITCH,
   CASE,
   DEFAULT,
+  BREAK,
+  CONTINUE,
 
   EOF,
   TOKEN_ERROR
@@ -135,6 +137,10 @@ impl Default for Scanner {
             (String::from("switch"), TokenType::SWITCH),
             (String::from("default"), TokenType::DEFAULT),
             (String::from("case"), TokenType::CASE),
+            (String::from("break"), TokenType::BREAK),
+            (String::from("continue"), TokenType::CONTINUE),
+
+
         ])
       }
   }
