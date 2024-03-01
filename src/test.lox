@@ -1,6 +1,3 @@
-
-    var breakfast = "beignets";
-    const beverage = "cafe au lait";
-    breakfast = "beignets with " + beverage;
-
-    print breakfast;
+if (true) {
+    print "hello world";
+}

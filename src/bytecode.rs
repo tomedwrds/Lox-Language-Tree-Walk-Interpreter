@@ -19,7 +19,8 @@ pub enum OpCode {
     GetGlobal(String),
     SetGlobal(String),
     GetLocal(usize),
-    SetLocal(usize)
+    SetLocal(usize),
+    JumpIfFalse(usize)
 }
 
 pub struct Chunk {

@@ -53,9 +53,10 @@ impl VirtualMachine {
     fn run(&mut self, execution_tracing: bool) -> Result<(), RuntimeError> {
         let code = &self.chunk.code;
         let constants = &self.chunk.constant;
-
-        for (op_code, line_number) in code {
-
+        let mut ip = 0;
+         
+        while ip < code.len() {
+            let (op_code, line_number) = &code[ip];
             if execution_tracing {
                 self.stack.display();
                 disassemble_instruction(op_code, line_number, constants); 
@@ -189,7 +190,18 @@ impl VirtualMachine {
                     self.stack.set(index, value);
                     
                 },
+                OpCode::JumpIfFalse(jump_size) => {
+                    if let Value::Bool(condition) = self.stack.peek() {
+                        if !condition {
+                            ip += jump_size;
+                        }
+                    } else {
+                        panic!("Attempt to evaluate no bool value");
+                    }
+                    
+                }
             }
+            ip += 1;
         }
         Ok(())
     }

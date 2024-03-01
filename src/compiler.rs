@@ -94,8 +94,10 @@ impl Compiler {
     fn declaration(&mut self) {
         if self.token_match(TokenType::VAR) {
             self.declaration_var(false);
+
         } else if self.token_match(TokenType::CONST) {
             self.declaration_var(true);
+
         } else {
             self.statement();
         }
@@ -167,17 +169,40 @@ impl Compiler {
     }
 
     fn statement(&mut self) {
-       if self.token_match(TokenType::PRINT) {
-        self.statement_print();
+        if self.token_match(TokenType::PRINT) {
+            self.statement_print();
+        } else if self.token_match(TokenType::IF) {
+            self.statement_if();
+        } else if self.token_match(TokenType::LEFT_BRACE) {
+            self.begin_scope();
+            self.statement_block();
+            self.end_scope();
 
-       } else if self.token_match(TokenType::LEFT_BRACE) {
-        self.begin_scope();
-        self.statement_block();
-        self.end_scope();
+        } else {
+            self.statement_expression()
+        }
+    }
 
-       } else {
-        self.statement_expression()
-       }
+    fn statement_if(&mut self) {
+        self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'if'."));
+        self.expression();
+        self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after condition."));
+
+        let then_jump = self.emit_jump(OpCode::JumpIfFalse(0xff));
+        self.statement();
+        self.patch_jump(then_jump);
+
+    }
+
+    fn emit_jump(&mut self, instruction: OpCode) -> usize {
+        self.emit_byte(instruction);
+        return self.chunk.code.len()-1;
+    }
+
+    fn patch_jump(&mut self, offset: usize) {
+        let jump_size = self.chunk.code.len() - 1 -offset;
+        let (_, line) = &self.chunk.code[offset];
+        self.chunk.code[offset] = (OpCode::JumpIfFalse(jump_size), *line);
     }
 
     fn statement_block(&mut self) {
