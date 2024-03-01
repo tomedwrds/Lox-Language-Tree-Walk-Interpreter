@@ -175,6 +175,8 @@ impl Compiler {
             self.statement_if();
         } else if self.token_match(TokenType::WHILE) {
             self.statement_while();
+        } else if self.token_match(TokenType::FOR) {
+            self.statement_for();
         } else if self.token_match(TokenType::LEFT_BRACE) {
             self.begin_scope();
             self.statement_block();
@@ -183,6 +185,53 @@ impl Compiler {
         } else {
             self.statement_expression()
         }
+    }
+
+    fn statement_for(&mut self) {
+        self.begin_scope();
+        self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'for'."));
+
+
+        if self.token_match(TokenType::SEMICOLON) {
+
+        } else if self.token_match(TokenType::VAR) {
+            self.declaration_var(false);
+        } else {
+            self.statement_expression();
+        }
+        let mut loop_start  = self.chunk.code.len()-1;
+        let mut exit_jump: Option<usize> = None;
+        if !self.token_match(TokenType::SEMICOLON) {
+            self.expression();
+            self.consume(TokenType::SEMICOLON, format!("Expect ';' after loop condition."));
+
+            //Jump out of loop if the condition is false;
+            exit_jump = Some(self.emit_jump(OpCode::JumpIfFalse(0xff)));
+            self.emit_byte(OpCode::Pop);
+        }
+
+        if !self.token_match(TokenType::RIGHT_PAREN) {
+            let body_jump = self.emit_jump(OpCode::Jump(0xff));
+            let increment_start = self.chunk.code.len()-1;
+
+            self.expression();
+            self.emit_byte(OpCode::Pop);
+            self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after for clauses."));
+
+            self.emit_loop(loop_start);
+            loop_start = increment_start;
+            self.patch_jump(body_jump);
+
+        }
+
+        self.statement();
+        self.emit_loop(loop_start);
+
+        if let Some(some_exit_jump) = exit_jump {
+            self.patch_jump(some_exit_jump);
+            self.emit_byte(OpCode::Pop);
+        }
+        self.end_scope();
     }
 
     fn statement_while(&mut self) {
