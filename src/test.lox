@@ -1,4 +1,4 @@
-if (true and false) {
+if (true or false) {
     print "hello world";
 } else {
     print "nut stack";

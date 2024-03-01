@@ -413,6 +413,7 @@ fn get_rules(token: TokenType) -> Rule {
         TokenType::LESS => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.comparison},
         TokenType::LESS_EQUAL => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.comparison},
         TokenType::AND => Rule{prefix: None, infix: Some(and_), precedence: PRECEDENCE.and},
+        TokenType::OR => Rule{prefix: None, infix: Some(or_), precedence: PRECEDENCE.or},
         _ => Rule{prefix: None, infix: None, precedence: PRECEDENCE.none}
     }
 }
@@ -511,6 +512,17 @@ fn and_(compiler: &mut Compiler, can_assign: bool) {
     let end_jump = compiler.emit_jump(OpCode::JumpIfFalse(0xff));
     compiler.emit_byte(OpCode::Pop);
     compiler.parse_precedence(PRECEDENCE.and);
+    compiler.patch_jump(end_jump);
+}
+
+fn or_(compiler: &mut Compiler, can_assign: bool) {
+    let else_jump = compiler.emit_jump(OpCode::JumpIfFalse(0xff));
+    let end_jump = compiler.emit_jump(OpCode::Jump(0xff));
+    
+    compiler.patch_jump(else_jump);
+    compiler.emit_byte(OpCode::Pop);
+
+    compiler.parse_precedence(PRECEDENCE.or);
     compiler.patch_jump(end_jump);
 }
 
