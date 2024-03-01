@@ -1,3 +1,4 @@
-for(var i = 0; i < 10; i = i + 1) {
-    print i;
+switch(1+2) {
+    case("hello") print "hello";
+    case(3) print "nuts";
 }

@@ -173,6 +173,8 @@ impl Compiler {
             self.statement_print();
         } else if self.token_match(TokenType::IF) {
             self.statement_if();
+        } else if self.token_match(TokenType::SWITCH) {
+            self.statement_switch();
         } else if self.token_match(TokenType::WHILE) {
             self.statement_while();
         } else if self.token_match(TokenType::FOR) {
@@ -185,6 +187,27 @@ impl Compiler {
         } else {
             self.statement_expression()
         }
+    }
+
+    fn statement_switch(&mut self) {
+        self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'switch'."));
+        self.expression();
+        self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after switched value."));
+        self.consume(TokenType::LEFT_BRACE, format!("Expect '{{' at start of switch."));
+        while self.token_match(TokenType::CASE) {
+            self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'case'."));
+            self.expression();
+            self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after value."));
+            let case_jump = self.emit_jump(OpCode::SwitchJump(0xff));
+            
+            self.statement();
+            self.patch_jump(case_jump);
+        }
+        self.consume(TokenType::RIGHT_BRACE, format!("Expect '}}' at end of switch."));
+
+        self.emit_byte(OpCode::Pop);
+
+
     }
 
     fn statement_for(&mut self) {
@@ -283,6 +306,7 @@ impl Compiler {
         match opcode {
             OpCode::JumpIfFalse(_) => self.chunk.code[offset] = (OpCode::JumpIfFalse(jump_size), *line),
             OpCode::Jump(_) => self.chunk.code[offset] = (OpCode::Jump(jump_size), *line),
+            OpCode::SwitchJump(_) => self.chunk.code[offset] = (OpCode::SwitchJump(jump_size), *line),
             _ => panic!("Attempting to patch the jump of non jump opcode")
         }
         

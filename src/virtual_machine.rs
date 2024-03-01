@@ -202,8 +202,16 @@ impl VirtualMachine {
                 },
                 OpCode::Jump(jump_size) => {
                     ip += jump_size;
-                }, OpCode::Loop(jump_back) => {
+                }, 
+                OpCode::Loop(jump_back) => {
                     ip -= jump_back;
+                },
+                OpCode::SwitchJump(jump_size) => {
+                    let n1 = self.stack.pop();
+                    let n2 = self.stack.peek();
+                    if n1 != n2 {
+                        ip += jump_size;
+                    }
                 }
             }
             ip += 1;

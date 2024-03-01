@@ -50,6 +50,9 @@ pub enum TokenType {
   VAR, 
   CONST,
   WHILE,
+  SWITCH,
+  CASE,
+  DEFAULT,
 
   EOF,
   TOKEN_ERROR
@@ -128,6 +131,9 @@ impl Default for Scanner {
             (String::from("var"), TokenType::VAR),
             (String::from("while"), TokenType::WHILE),
             (String::from("const"), TokenType::CONST),
+            (String::from("switch"), TokenType::SWITCH),
+            (String::from("default"), TokenType::DEFAULT),
+            (String::from("case"), TokenType::CASE),
         ])
       }
   }
