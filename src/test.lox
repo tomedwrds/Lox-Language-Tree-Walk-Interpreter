@@ -1,4 +1,5 @@
-switch(1+2) {
-    case("hello") print "hello";
-    case(3) print "nuts";
+switch(1+4) {
+    case 5: print "hello";
+    case 5: print "nuts";
+    default: print "dead";
 }

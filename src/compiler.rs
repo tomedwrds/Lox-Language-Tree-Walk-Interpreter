@@ -1,4 +1,6 @@
 
+use std::fmt::format;
+
 use crate::{bytecode::{Chunk, OpCode, Value}, debug::disassemble_chunk, scanner::{scan, Literal, Scanner, Token, TokenType}};
 
 pub fn compile(src: String) -> Option<Chunk> {
@@ -193,18 +195,31 @@ impl Compiler {
         self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'switch'."));
         self.expression();
         self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after switched value."));
+        
         self.consume(TokenType::LEFT_BRACE, format!("Expect '{{' at start of switch."));
+        
+        let mut case_end_jumps: Vec<usize> = vec![];
         while self.token_match(TokenType::CASE) {
-            self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'case'."));
             self.expression();
-            self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after value."));
+            self.consume(TokenType::COLON, format!("Expect ':' after 'case'."));
             let case_jump = self.emit_jump(OpCode::SwitchJump(0xff));
             
             self.statement();
+            let jump_index = self.emit_jump(OpCode::Jump(0xff));
+            case_end_jumps.push(jump_index);
+
             self.patch_jump(case_jump);
         }
+
+        self.consume(TokenType::DEFAULT, format!("Expect 'default' at end of switch."));
+        self.consume(TokenType::COLON, format!("Expect ':' after 'swtich'."));
+        self.statement();
+
         self.consume(TokenType::RIGHT_BRACE, format!("Expect '}}' at end of switch."));
 
+        for case_end in case_end_jumps {
+            self.patch_jump(case_end);
+        }
         self.emit_byte(OpCode::Pop);
 
 
