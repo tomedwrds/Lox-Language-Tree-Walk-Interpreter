@@ -199,6 +199,9 @@ impl VirtualMachine {
                         panic!("Attempt to evaluate no bool value");
                     }
                     
+                },
+                OpCode::Jump(jump_size) => {
+                    ip += jump_size;
                 }
             }
             ip += 1;

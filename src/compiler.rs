@@ -189,9 +189,17 @@ impl Compiler {
         self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after condition."));
 
         let then_jump = self.emit_jump(OpCode::JumpIfFalse(0xff));
+        self.emit_byte(OpCode::Pop);
         self.statement();
-        self.patch_jump(then_jump);
 
+        let else_jump = self.emit_jump(OpCode::Jump(0xff));
+        self.patch_jump(then_jump);
+        self.emit_byte(OpCode::Pop);
+
+        if self.token_match(TokenType::ELSE) {
+            self.statement();
+        }
+        self.patch_jump(else_jump);
     }
 
     fn emit_jump(&mut self, instruction: OpCode) -> usize {
@@ -201,8 +209,13 @@ impl Compiler {
 
     fn patch_jump(&mut self, offset: usize) {
         let jump_size = self.chunk.code.len() - 1 -offset;
-        let (_, line) = &self.chunk.code[offset];
-        self.chunk.code[offset] = (OpCode::JumpIfFalse(jump_size), *line);
+        let (opcode, line) = &self.chunk.code[offset];
+        match opcode {
+            OpCode::JumpIfFalse(_) => self.chunk.code[offset] = (OpCode::JumpIfFalse(jump_size), *line),
+            OpCode::Jump(_) => self.chunk.code[offset] = (OpCode::Jump(jump_size), *line),
+            _ => panic!("Attempting to patch the jump of non jump opcode")
+        }
+        
     }
 
     fn statement_block(&mut self) {

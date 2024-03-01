@@ -29,6 +29,7 @@ pub fn disassemble_instruction(op_code: &OpCode, line: &usize, constants: &Vec<V
         OpCode::GetLocal(n) => print!("OP_GET_LOCAL {}\n",n),
         OpCode::SetLocal(n) => print!("OP_SET_LOCAL {}\n",n),
         OpCode::JumpIfFalse(n) => print!("OP_JUMP_IF_FALSE {}\n",n),
+        OpCode::Jump(n) => print!("OP_JUMP {}\n",n),
 
 
     }

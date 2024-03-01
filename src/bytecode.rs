@@ -20,7 +20,8 @@ pub enum OpCode {
     SetGlobal(String),
     GetLocal(usize),
     SetLocal(usize),
-    JumpIfFalse(usize)
+    JumpIfFalse(usize),
+    Jump(usize)
 }
 
 pub struct Chunk {
