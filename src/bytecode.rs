@@ -21,7 +21,8 @@ pub enum OpCode {
     GetLocal(usize),
     SetLocal(usize),
     JumpIfFalse(usize),
-    Jump(usize)
+    Jump(usize),
+    Loop(usize)
 }
 
 pub struct Chunk {

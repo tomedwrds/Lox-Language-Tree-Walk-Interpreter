@@ -202,6 +202,8 @@ impl VirtualMachine {
                 },
                 OpCode::Jump(jump_size) => {
                     ip += jump_size;
+                }, OpCode::Loop(jump_back) => {
+                    ip -= jump_back;
                 }
             }
             ip += 1;

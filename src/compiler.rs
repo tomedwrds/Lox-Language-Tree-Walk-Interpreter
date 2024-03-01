@@ -173,6 +173,8 @@ impl Compiler {
             self.statement_print();
         } else if self.token_match(TokenType::IF) {
             self.statement_if();
+        } else if self.token_match(TokenType::WHILE) {
+            self.statement_while();
         } else if self.token_match(TokenType::LEFT_BRACE) {
             self.begin_scope();
             self.statement_block();
@@ -181,6 +183,25 @@ impl Compiler {
         } else {
             self.statement_expression()
         }
+    }
+
+    fn statement_while(&mut self) {
+        let loop_start = self.chunk.code.len() - 1;
+        self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'if'."));
+        self.expression();
+        self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after condition."));
+
+        let exit_jump = self.emit_jump(OpCode::JumpIfFalse(0xff));
+        self.emit_byte(OpCode::Pop);
+        self.statement();
+        self.emit_loop(loop_start);
+
+        self.patch_jump(exit_jump);
+        self.emit_byte(OpCode::Pop);
+    }
+
+    fn emit_loop(&mut self, loop_start: usize) {
+        self.emit_byte(OpCode::Loop(self.chunk.code.len() - loop_start));
     }
 
     fn statement_if(&mut self) {
