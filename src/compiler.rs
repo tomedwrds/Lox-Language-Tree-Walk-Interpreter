@@ -412,6 +412,7 @@ fn get_rules(token: TokenType) -> Rule {
         TokenType::GREATER_EQUAL => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.comparison},
         TokenType::LESS => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.comparison},
         TokenType::LESS_EQUAL => Rule{prefix: None, infix: Some(binary), precedence: PRECEDENCE.comparison},
+        TokenType::AND => Rule{prefix: None, infix: Some(and_), precedence: PRECEDENCE.and},
         _ => Rule{prefix: None, infix: None, precedence: PRECEDENCE.none}
     }
 }
@@ -504,5 +505,12 @@ fn literal(compiler: &mut Compiler, can_assign: bool) {
 
 fn variable(compiler: &mut Compiler, can_assign: bool) {
     compiler.named_variable(&compiler.previous.clone(), can_assign);
+}
+
+fn and_(compiler: &mut Compiler, can_assign: bool) {
+    let end_jump = compiler.emit_jump(OpCode::JumpIfFalse(0xff));
+    compiler.emit_byte(OpCode::Pop);
+    compiler.parse_precedence(PRECEDENCE.and);
+    compiler.patch_jump(end_jump);
 }
 
