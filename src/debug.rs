@@ -33,6 +33,8 @@ pub fn disassemble_instruction(op_code: &OpCode, line: &usize, constants: &Vec<V
         OpCode::Loop(n) => print!("OP_LOOP {}\n",n),
         OpCode::SwitchJump(n) => print!("OP_SWITCH_JUMP {}\n",n),
         OpCode::Break => print!("OP_BREAK\n"),
+        OpCode::Continue => print!("OP_CONTINUE\n"),
+
 
 
     }

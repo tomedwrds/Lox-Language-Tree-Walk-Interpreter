@@ -24,7 +24,8 @@ pub enum OpCode {
     Jump(usize),
     Loop(usize),
     SwitchJump(usize),
-    Break
+    Break,
+    Continue
 }
 
 pub struct Chunk {

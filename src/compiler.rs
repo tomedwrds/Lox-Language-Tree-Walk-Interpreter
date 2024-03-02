@@ -194,6 +194,13 @@ impl Compiler {
                 self.consume(TokenType::SEMICOLON, format!("Expect ';' after 'break'."));
                 self.emit_byte(OpCode::Break);
             }
+        } else if self.token_match(TokenType::CONTINUE) {
+            if !self.in_loop {
+                self.parse_error(self.previous.clone(), Some(format!("Continue statements only allowed in 'for' or 'while' loops.")));
+            } else {
+                self.consume(TokenType::SEMICOLON, format!("Expect ';' after 'continue'."));
+                self.emit_byte(OpCode::Continue);
+            }
         } else {
             self.statement_expression()
         }

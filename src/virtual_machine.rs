@@ -214,12 +214,22 @@ impl VirtualMachine {
                     }
                 },
                 OpCode::Break => {
-                    while true {
+                    loop {
                         let (next_opcode, _) = &code[ip];
                         ip += 1;
                         if let OpCode::Loop(_) = next_opcode {
                             break;
                         }
+                    }
+                }, OpCode::Continue => {
+                    loop {
+                        let (next_opcode, _) = &code[ip+1];
+                        if let OpCode::Loop(_) = next_opcode {
+                            break;
+                        } 
+                        ip += 1;
+                        
+
                     }
                 }
             }
