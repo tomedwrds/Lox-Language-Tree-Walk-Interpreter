@@ -45,13 +45,14 @@ pub fn interpret_vm(src: String, debug: bool) -> InterpreterOutput {
             };
             let program = vm.run(false);
             if let Err(error) = program {
+                let runtime_error_output;
                 match error {
-                    RuntimeError::TypeError(s, l) => println!("TYPE ERROR on line {}: {}",l, s),
-                    RuntimeError::VarError(s, l) => println!("VAR ERROR on line {}: {}",l, s)
+                    RuntimeError::TypeError(s, l) => runtime_error_output = vec![format!("[Line {l}] Runtime Type Error"), format!("Error message: {s}")],
+                    RuntimeError::VarError(s, l) => runtime_error_output = vec![format!("[Line {l}] Runtime Var Error"), format!("Error message: {s}")]
                 }
                 return InterpreterOutput {
                     result: InterpretResult::InterpretRuntimeError,
-                    output: vm.output
+                    output: runtime_error_output
                 }
             } else {
                 return InterpreterOutput {
@@ -187,7 +188,7 @@ impl VirtualMachine {
                     if let Some(global) = self.globals.get(name) {
                         self.stack.push(global.value.clone());
                     } else {
-                        return Err(RuntimeError::VarError(format!("Undefined variable {}",name), *line_number))
+                        return Err(RuntimeError::VarError(format!("Undefined variable {}.",name), *line_number))
                     }
 
                 },
@@ -199,14 +200,14 @@ impl VirtualMachine {
                         let value = self.stack.peek();
                         self.globals.insert(name.clone(), Global { value, is_const: global.is_const});
                     } else {
-                        return Err(RuntimeError::VarError(format!("Undefined variable {}",name), *line_number))
+                        return Err(RuntimeError::VarError(format!("Undefined variable '{}'.",name), *line_number))
                     }
                 },
                 OpCode::GetLocal(index) => {
                     if let Some(value) = self.stack.get(index) {
                         self.stack.push(value.clone());
                     } else {
-                        return Err(RuntimeError::VarError(format!("Undefined variable"), *line_number))
+                        return Err(RuntimeError::VarError(format!("Undefined variable."), *line_number))
                     }
                 },
                 OpCode::SetLocal(index) => {
