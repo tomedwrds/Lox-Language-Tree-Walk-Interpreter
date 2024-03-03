@@ -3,7 +3,7 @@ use std::fmt::format;
 
 use crate::{bytecode::{Chunk, OpCode, Value}, debug::disassemble_chunk, scanner::{scan, Literal, Scanner, Token, TokenType}};
 
-pub fn compile(src: String) -> Option<Chunk> {
+pub fn compile(src: String) -> CompilerOutput {
     let mut compiler = compiler_initalize(src);
     compiler.advance();
    
@@ -12,13 +12,21 @@ pub fn compile(src: String) -> Option<Chunk> {
     }
     
     compiler.end_compiler();
-    return Some(compiler.chunk);
+    
+    if compiler.error_message.is_empty() {
+        return CompilerOutput::Chunk(compiler.chunk)
+    }  
+    return CompilerOutput::Error(compiler.error_message)
 }
 
+pub enum CompilerOutput {
+    Chunk(Chunk),
+    Error(Vec<String>)
+}
 struct Compiler {
     current: Token,
     previous: Token,
-    had_error: bool,
+    error_message: Vec<String>,
     panic_mode: bool,
     chunk: Chunk,
     scanner: Scanner,
@@ -39,13 +47,13 @@ fn compiler_initalize(src: String) -> Compiler {
     Compiler {
         current: Token { token_type: TokenType::NIL, lexeme: format!(""), literal: None, line: 0 },
         previous: Token { token_type: TokenType::NIL, lexeme: format!(""), literal: None, line: 0 },
-        had_error: false,
+        error_message: vec![],
         panic_mode: false,
         chunk: Chunk::default(),
         scanner: scan(src),
         scope_depth: 0,
         locals: Vec::new(),
-        in_loop: false
+        in_loop: false,
     }
 }
 
@@ -402,10 +410,12 @@ impl Compiler {
                     infix_func(self, can_assign);
                 }
 
-                if can_assign && self.token_match(TokenType::EQUAL) {
-                    self.parse_error(self.current.clone(), Some(format!("Invalid assignment target.")));
-                  }
+                
             }
+
+            if can_assign && self.token_match(TokenType::EQUAL) {
+                self.parse_error(self.previous.clone(), Some(format!("Invalid assignment target.")));
+              }
         } else {
             self.parse_error(self.previous.clone(), Some(format!("Expect expression.")))
         }
@@ -473,11 +483,10 @@ impl Compiler {
             return;
         }
         self.panic_mode = true;
-        println!("[line {}] Error at token {:?}", token.line, token.token_type);
+        self.error_message.push(format!("[Line {}] Error at token {:?}", token.line, token.token_type));
         if let Some(error_message_set) = error_message {
-            println!("Error Message: {:?}", error_message_set)
+            self.error_message.push(format!("Error Message: {:?}", error_message_set));
         } 
-        self.had_error = true;
     }
 
     fn synchronize(&mut self) {

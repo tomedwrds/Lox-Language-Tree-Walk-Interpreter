@@ -1,6 +1,6 @@
 use std::{collections::HashMap, default, env::VarError};
 
-use crate::{bytecode::{Chunk, OpCode, Value}, compiler::compile, debug::{disassemble_chunk, disassemble_instruction}};
+use crate::{bytecode::{Chunk, OpCode, Value}, compiler::{compile, CompilerOutput}, debug::{disassemble_chunk, disassemble_instruction}};
 
 pub struct VirtualMachine {
     pub chunk: Chunk,
@@ -15,9 +15,14 @@ struct Global {
     is_const: bool
 }
 pub enum InterpretResult {
-    InterpretOk(Vec<String>),
+    InterpretOk,
     InterpretCompilerError,
     InterpretRuntimeError
+}
+
+pub struct InterpreterOutput {
+    result: InterpretResult,
+    pub output: Vec<String>
 }
 
 enum RuntimeError {
@@ -25,31 +30,46 @@ enum RuntimeError {
     VarError(String, usize)
 }
 
-pub fn interpret_vm(src: String, debug: bool) -> InterpretResult {
+pub fn interpret_vm(src: String, debug: bool) -> InterpreterOutput {
 
-    if let Some(chunk) = compile(src) {
-        if debug {
-            disassemble_chunk(&chunk, "Debug");
-        }
-        let mut vm = VirtualMachine {
-            chunk,
-            stack: Stack::default(),
-            globals: HashMap::new(),
-            output: vec![]
-        };
-        let program = vm.run(false);
-        if let Err(error) = program {
-            match error {
-                RuntimeError::TypeError(s, l) => println!("TYPE ERROR on line {}: {}",l, s),
-                RuntimeError::VarError(s, l) => println!("VAR ERROR on line {}: {}",l, s)
+    match compile(src) {
+        CompilerOutput::Chunk(chunk) => {
+            if debug {
+                disassemble_chunk(&chunk, "Debug");
             }
-            return InterpretResult::InterpretRuntimeError
-        } else {
-            return InterpretResult::InterpretOk(vm.output)
+            let mut vm = VirtualMachine {
+                chunk,
+                stack: Stack::default(),
+                globals: HashMap::new(),
+                output: vec![]
+            };
+            let program = vm.run(false);
+            if let Err(error) = program {
+                match error {
+                    RuntimeError::TypeError(s, l) => println!("TYPE ERROR on line {}: {}",l, s),
+                    RuntimeError::VarError(s, l) => println!("VAR ERROR on line {}: {}",l, s)
+                }
+                return InterpreterOutput {
+                    result: InterpretResult::InterpretRuntimeError,
+                    output: vm.output
+                }
+            } else {
+                return InterpreterOutput {
+                    result: InterpretResult::InterpretOk,
+                    output: vm.output
+                }
+            }
+        },
+        CompilerOutput::Error(error) => {
+            return InterpreterOutput {
+                result: InterpretResult::InterpretCompilerError,
+                output: error
+            }
         }
-    } 
-    return InterpretResult::InterpretCompilerError
-}
+    }         
+} 
+    
+
 
 impl VirtualMachine {
     

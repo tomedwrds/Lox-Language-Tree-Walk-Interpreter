@@ -6,9 +6,5 @@ mod assignment;
 
 fn run_from_file(file: &str) -> Vec<String> {
     let result = interpret_vm(fs::read_to_string(file.to_string()).expect("Error: file doesnt exist"), false);  
-    if let InterpretResult::InterpretOk(output) = result {
-        return output;
-    } else {
-        panic!("Program failed to run");
-    }
+    return result.output
 }
