@@ -409,13 +409,12 @@ impl Compiler {
                 if let Some(infix_func) = infix_rule {
                     infix_func(self, can_assign);
                 }
-
                 
             }
-
             if can_assign && self.token_match(TokenType::EQUAL) {
                 self.parse_error(self.previous.clone(), Some(format!("Invalid assignment target.")));
-              }
+            }
+
         } else {
             self.parse_error(self.previous.clone(), Some(format!("Expect expression.")))
         }
@@ -443,11 +442,15 @@ impl Compiler {
         }
     
     
-        if self.token_match(TokenType::EQUAL) && can_assign {
-            self.expression();
-            self.emit_byte(set_op)
+        if can_assign {
+            if self.token_match(TokenType::EQUAL) {
+                self.expression();
+                self.emit_byte(set_op)
+            } else {
+                self.emit_byte(get_op);
+            }
         } else {
-            self.emit_byte(get_op);
+            self.parse_error(self.current.clone(), Some(format!("Invalid assignment target.")));
         }
     }
 
@@ -483,9 +486,9 @@ impl Compiler {
             return;
         }
         self.panic_mode = true;
-        self.error_message.push(format!("[Line {}] Error at token {:?}", token.line, token.token_type));
+        self.error_message.push(format!("[Line {}] Error at '{}'", token.line, token.lexeme));
         if let Some(error_message_set) = error_message {
-            self.error_message.push(format!("Error Message: {:?}", error_message_set));
+            self.error_message.push(format!("Error Message: {}", error_message_set));
         } 
     }
 

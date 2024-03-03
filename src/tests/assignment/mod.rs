@@ -15,12 +15,17 @@ mod tests {
 
     #[test]
     fn assignment_grouping() {
-        assert_eq!(run_from_file("src/tests/assignment/grouping.lox"), ["[Line 2] Error at token EQUAL", "Error Message: \"Invalid assignment target.\""]);
+        assert_eq!(run_from_file("src/tests/assignment/grouping.lox"), ["[Line 2] Error at '='", "Error Message: Invalid assignment target."]);
     }
 
     #[test]
     fn assignment_infix_operator() {
-        assert_eq!(run_from_file("src/tests/assignment/grouping.lox"), ["[Line 2] Error at token EQUAL", "Error Message: \"Invalid assignment target.\""]);
+        assert_eq!(run_from_file("src/tests/assignment/infix_operator.lox"), ["[Line 3] Error at '='", "Error Message: Invalid assignment target."]);
+    }
+
+    #[test]
+    fn assignment_prefix_operator() {
+        assert_eq!(run_from_file("src/tests/assignment/prefix_operator.lox"), ["[Line 2] Error at '='", "Error Message: Invalid assignment target."]);
     }
 
     #[test]
