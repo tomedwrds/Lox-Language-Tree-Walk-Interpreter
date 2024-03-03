@@ -5,6 +5,7 @@ use crate::virtual_machine::{interpret_vm};
 mod assignment;
 mod block;
 mod bool;
+mod comments;
 
 
 fn run_from_file(file: &str) -> Vec<String> {
