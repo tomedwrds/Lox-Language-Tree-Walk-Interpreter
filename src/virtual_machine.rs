@@ -5,7 +5,8 @@ use crate::{bytecode::{Chunk, OpCode, Value}, compiler::compile, debug::{disasse
 pub struct VirtualMachine {
     pub chunk: Chunk,
     pub stack: Stack,
-    globals: HashMap<String, Global>
+    globals: HashMap<String, Global>,
+    output: Vec<String>
 }
 
 
@@ -14,7 +15,7 @@ struct Global {
     is_const: bool
 }
 pub enum InterpretResult {
-    InterpretOk,
+    InterpretOk(Vec<String>),
     InterpretCompilerError,
     InterpretRuntimeError
 }
@@ -24,14 +25,17 @@ enum RuntimeError {
     VarError(String, usize)
 }
 
-pub fn interpret_vm(src: String) -> InterpretResult {
+pub fn interpret_vm(src: String, debug: bool) -> InterpretResult {
 
     if let Some(chunk) = compile(src) {
-        disassemble_chunk(&chunk, "Debug");
+        if debug {
+            disassemble_chunk(&chunk, "Debug");
+        }
         let mut vm = VirtualMachine {
             chunk,
             stack: Stack::default(),
-            globals: HashMap::new()
+            globals: HashMap::new(),
+            output: vec![]
         };
         let program = vm.run(false);
         if let Err(error) = program {
@@ -41,7 +45,7 @@ pub fn interpret_vm(src: String) -> InterpretResult {
             }
             return InterpretResult::InterpretRuntimeError
         } else {
-            return InterpretResult::InterpretOk
+            return InterpretResult::InterpretOk(vm.output)
         }
     } 
     return InterpretResult::InterpretCompilerError
@@ -143,7 +147,7 @@ impl VirtualMachine {
                     }
                 }, OpCode::Print => {
                     let v = self.stack.pop();
-                    println!("{}",v);
+                    self.output.push(format!("{v}"));
                 }, OpCode::Pop => {
                     self.stack.pop();
                 },

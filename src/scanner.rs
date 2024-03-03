@@ -1,5 +1,3 @@
-mod tests;
-
 use std::collections::HashMap;
 use std::fmt;
 #[derive(Clone, Debug, PartialEq, Copy)]

@@ -23,21 +23,25 @@ mod bytecode;
 mod debug;
 mod virtual_machine;
 mod compiler;
+mod tests;
 
 fn main() {
     let arg: Vec<String> = env::args().collect();
-   
-    if arg.len() == 1 {
+    let file;
+    print!("{:?}",arg);
+    print!("t");
+    if arg.len() == 2 {
         //run prompt left for now
+        file = arg[1].clone();
     } else {
-        let file = String::from("src/test.lox");
-        run_file(&file);
+        file = String::from("src/test.lox");
+        //run_file(&file);
     }
-    let file = String::from("src/test.lox");
+    //let file = String::from("src/test.lox");
     let contents = fs::read_to_string(file)
         .expect("Error: file doesnt exist");
     
-    interpret_vm(contents);
+    interpret_vm(contents, true);
         
     }
     // let chunk = Chunk {

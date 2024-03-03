@@ -19,7 +19,6 @@ pub enum RuntimeError {
     Class(String),
     Return(Option<Value>)
 }
-mod tests;
 
 #[derive(Debug)]
 pub struct Interpreter {
