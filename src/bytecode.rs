@@ -67,7 +67,7 @@ impl Display for Value {
             Value::Number(n) => write!(f, "{}", n),
             Value::Bool(b) => write!(f, "{}", b),
             Value::String(s) => write!(f, "{}", s),
-            Value::Nil => write!(f, "Nil")
+            Value::Nil => write!(f, "nil")
         }
     }
 }
