@@ -6,6 +6,7 @@ mod assignment;
 mod block;
 mod bool;
 mod comments;
+mod variable;
 
 
 fn run_from_file(file: &str) -> Vec<String> {

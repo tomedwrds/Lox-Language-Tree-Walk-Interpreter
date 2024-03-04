@@ -1,5 +1,4 @@
-for (var i = 0; i< 10; i = i + 1) {
-    print "test";
-    continue;
-    print "no";
+{
+  var a = "value";
+  var a = "other"; // Error at 'a': Already a variable with this name in this scope.
 }
