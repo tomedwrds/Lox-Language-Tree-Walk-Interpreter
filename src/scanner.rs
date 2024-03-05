@@ -137,6 +137,7 @@ impl Default for Scanner {
             (String::from("case"), TokenType::CASE),
             (String::from("break"), TokenType::BREAK),
             (String::from("continue"), TokenType::CONTINUE),
+            (String::from("this"), TokenType::THIS),
 
 
         ])

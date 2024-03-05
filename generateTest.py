@@ -35,10 +35,11 @@ with open(dir + "/mod.rs", "w") as testFile:
                     testFile.write(f"\t\tassert_eq!(run_from_file(\"{file_path}\"), {expectedOutput});\n".replace("'", '"'))             
                 elif expectedCompileError:
                     token, message = expectedCompileError.group(1).split(': ')
-                    testFile.write(f"\t\tassert_eq!(run_from_file(\"{file_path}\"), [\"Line {line}] Error at {token}\", \"Error message: {message}\"]);\n")
+        
+                    testFile.write(f"\t\tassert_eq!(run_from_file(\"{file_path}\"), [\"[Line {line}] Error at {token}\", \"Error Message: {message}\"]);\n")
                 elif expectedRuntimeError:
                     type, message = expectedRuntimeError.group(1).split(': ')
-                    testFile.write(f"\t\tassert_eq!(run_from_file(\"{file_path}\"), [\"Line {line}] Runtime {type} Error\", \"Error message: {message}\"]);\n")
+                    testFile.write(f"\t\tassert_eq!(run_from_file(\"{file_path}\"), [\"[Line {line}] Runtime {type} Error\", \"Error Message: {message}\"]);\n")
                 else:
                     print(f"Invalid test format! {file_path}")
                     

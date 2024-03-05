@@ -4,17 +4,17 @@ mod tests {
 
 	#[test]
 	fn variable_collide_with_parameter() {
-		assert_eq!(run_from_file("src/tests/variable/collide_with_parameter.lox"), ["Line 2] Error at 'a'", "Error message: Already a variable with this name in this scope."]);
+		assert_eq!(run_from_file("src/tests/variable/collide_with_parameter.lox"), ["[Line 2] Error at 'a'", "Error Message: Already a variable with this name in this scope."]);
 	}
 
 	#[test]
 	fn variable_duplicate_local() {
-		assert_eq!(run_from_file("src/tests/variable/duplicate_local.lox"), ["Line 3] Error at 'a'", "Error message: Already a variable with this name in this scope."]);
+		assert_eq!(run_from_file("src/tests/variable/duplicate_local.lox"), ["[Line 3] Error at 'a'", "Error Message: Already a variable with this name in this scope."]);
 	}
 
 	#[test]
 	fn variable_duplicate_parameter() {
-		assert_eq!(run_from_file("src/tests/variable/duplicate_parameter.lox"), ["Line 2] Error at 'arg'", "Error message: Already a variable with this name in this scope."]);
+		assert_eq!(run_from_file("src/tests/variable/duplicate_parameter.lox"), ["[Line 2] Error at 'arg'", "Error Message: Already a variable with this name in this scope."]);
 	}
 
 	#[test]
@@ -69,12 +69,12 @@ mod tests {
 
 	#[test]
 	fn variable_undefined_global() {
-		assert_eq!(run_from_file("src/tests/variable/undefined_global.lox"), ["Line 1] Runtime Var Error", "Error message: Undefined variable 'notDefined'."]);
+		assert_eq!(run_from_file("src/tests/variable/undefined_global.lox"), ["[Line 1] Runtime Var Error", "Error Message: Undefined variable 'notDefined'."]);
 	}
 
 	#[test]
 	fn variable_undefined_local() {
-		assert_eq!(run_from_file("src/tests/variable/undefined_local.lox"), ["Line 2] Runtime Var Error", "Error message: Undefined variable 'notDefined'."]);
+		assert_eq!(run_from_file("src/tests/variable/undefined_local.lox"), ["[Line 2] Runtime Var Error", "Error Message: Undefined variable 'notDefined'."]);
 	}
 
 	#[test]
@@ -89,7 +89,7 @@ mod tests {
 
 	#[test]
 	fn variable_use_false_as_var() {
-		assert_eq!(run_from_file("src/tests/variable/use_false_as_var.lox"), ["Line 1] Error at 'false'", "Error message: Expect variable name."]);
+		assert_eq!(run_from_file("src/tests/variable/use_false_as_var.lox"), ["[Line 1] Error at 'false'", "Error Message: Expect variable name."]);
 	}
 
 	#[test]
@@ -99,17 +99,17 @@ mod tests {
 
 	#[test]
 	fn variable_use_local_in_initializer() {
-		assert_eq!(run_from_file("src/tests/variable/use_local_in_initializer.lox"), ["Line 3] Error at 'a'", "Error message: Can't read local variable in its own initializer."]);
+		assert_eq!(run_from_file("src/tests/variable/use_local_in_initializer.lox"), ["[Line 3] Error at 'a'", "Error Message: Can't read local variable in its own initializer."]);
 	}
 
 	#[test]
 	fn variable_use_nil_as_var() {
-		assert_eq!(run_from_file("src/tests/variable/use_nil_as_var.lox"), ["Line 1] Error at 'nil'", "Error message: Expect variable name."]);
+		assert_eq!(run_from_file("src/tests/variable/use_nil_as_var.lox"), ["[Line 1] Error at 'nil'", "Error Message: Expect variable name."]);
 	}
 
 	#[test]
 	fn variable_use_this_as_var() {
-		assert_eq!(run_from_file("src/tests/variable/use_this_as_var.lox"), ["Line 1] Error at 'this'", "Error message: Expect variable name."]);
+		assert_eq!(run_from_file("src/tests/variable/use_this_as_var.lox"), ["[Line 1] Error at 'this'", "Error Message: Expect variable name."]);
 	}
 
 }

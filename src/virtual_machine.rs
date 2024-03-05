@@ -47,8 +47,8 @@ pub fn interpret_vm(src: String, debug: bool) -> InterpreterOutput {
             if let Err(error) = program {
                 let runtime_error_output;
                 match error {
-                    RuntimeError::TypeError(s, l) => runtime_error_output = vec![format!("[Line {l}] Runtime Type Error"), format!("Error message: {s}")],
-                    RuntimeError::VarError(s, l) => runtime_error_output = vec![format!("[Line {l}] Runtime Var Error"), format!("Error message: {s}")]
+                    RuntimeError::TypeError(s, l) => runtime_error_output = vec![format!("[Line {l}] Runtime Type Error"), format!("Error Message: {s}")],
+                    RuntimeError::VarError(s, l) => runtime_error_output = vec![format!("[Line {l}] Runtime Var Error"), format!("Error Message: {s}")]
                 }
                 return InterpreterOutput {
                     result: InterpretResult::InterpretRuntimeError,
@@ -188,7 +188,7 @@ impl VirtualMachine {
                     if let Some(global) = self.globals.get(name) {
                         self.stack.push(global.value.clone());
                     } else {
-                        return Err(RuntimeError::VarError(format!("Undefined variable {}.",name), *line_number))
+                        return Err(RuntimeError::VarError(format!("Undefined variable '{}'.",name), *line_number))
                     }
 
                 },

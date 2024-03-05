@@ -160,9 +160,11 @@ impl Compiler {
     }
 
     fn add_local(&mut self, token: Token, is_const: bool) {
-        let local =  Local {name: token, depth: -1, is_const};
-        if self.locals.contains(&local) {
-            self.parse_error(self.current.clone(), Some(format!("Already a variable with this name in this scope")));
+        let local =  Local {name: token.clone(), depth: -1, is_const};
+        for existing_locals in self.locals.clone() {
+            if existing_locals.name.lexeme == token.lexeme {
+                self.parse_error(self.previous.clone(), Some(format!("Already a variable with this name in this scope.")));
+            }
         }
         self.locals.push(local);
     }
