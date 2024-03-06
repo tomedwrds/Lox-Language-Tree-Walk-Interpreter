@@ -9,6 +9,7 @@ mod comments;
 mod variable;
 mod for_loop;
 mod while_loop;
+mod if_statement;
 
 fn run_from_file(file: &str) -> Vec<String> {
     let result = interpret_vm(fs::read_to_string(file.to_string()).expect("Error: file doesnt exist"), false);  
