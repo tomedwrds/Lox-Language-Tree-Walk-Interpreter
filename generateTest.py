@@ -1,7 +1,7 @@
 import os
 import re
 base_dir = 'src/tests/'
-test_dir = "variable"
+test_dir = "for_loop"
 dir = base_dir + test_dir
 directory = os.fsencode(dir)
 
@@ -23,7 +23,11 @@ with open(dir + "/mod.rs", "w") as testFile:
                 expectedRuntimeError = None
                 line = 1
                 for testLine in fileString.split('\n'):
-                    expectedCompileError = re.search('Error at (.*)', testLine)
+                    expectedCompileError = re.findall('Error at (.*) Error at (.*)', testLine)
+                    if expectedCompileError:
+                        break
+                    expectedCompileError = re.findall('Error at (.*)', testLine)
+                    
                     if expectedCompileError:
                         break
                     expectedRuntimeError = re.search('expect runtime error (.*)', testLine)
@@ -34,9 +38,19 @@ with open(dir + "/mod.rs", "w") as testFile:
                 if expectedOutput:
                     testFile.write(f"\t\tassert_eq!(run_from_file(\"{file_path}\"), {expectedOutput});\n".replace("'", '"'))             
                 elif expectedCompileError:
-                    token, message = expectedCompileError.group(1).split(': ')
-        
-                    testFile.write(f"\t\tassert_eq!(run_from_file(\"{file_path}\"), [\"[Line {line}] Error at {token}\", \"Error Message: {message}\"]);\n")
+                    error_message = expectedCompileError[0]
+                    if type(error_message) is tuple:
+                        error_str = f"\t\tassert_eq!(run_from_file(\"{file_path}\"), ["
+                        for i in range(len(error_message)):
+                            token, message = error_message[i].split(': ')
+                            if i != 0:
+                                error_str += ","
+                            error_str += f"\"[Line {line}] Error at {token}\", \"Error Message: {message}\""
+                        error_str += f"]);\n"
+                        testFile.write(error_str)
+                    else:
+                        token, message = error_message.split(': ')
+                        testFile.write(f"\t\tassert_eq!(run_from_file(\"{file_path}\"), [\"[Line {line}] Error at {token}\", \"Error Message: {message}\"]);\n")
                 elif expectedRuntimeError:
                     type, message = expectedRuntimeError.group(1).split(': ')
                     testFile.write(f"\t\tassert_eq!(run_from_file(\"{file_path}\"), [\"[Line {line}] Runtime {type} Error\", \"Error Message: {message}\"]);\n")
