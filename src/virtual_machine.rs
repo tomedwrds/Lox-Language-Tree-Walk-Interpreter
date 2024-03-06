@@ -216,14 +216,13 @@ impl VirtualMachine {
                     
                 },
                 OpCode::JumpIfFalse(jump_size) => {
-                    if let Value::Bool(condition) = self.stack.peek() {
-                        if !condition {
+                    match self.stack.peek() {
+                        Value::Bool(condition) => if !condition {
                             ip += jump_size;
-                        }
-                    } else {
-                        panic!("Attempt to evaluate no bool value");
+                        },
+                        Value::Nil => ip += jump_size,
+                        _ => ()
                     }
-                    
                 },
                 OpCode::Jump(jump_size) => {
                     ip += jump_size;
