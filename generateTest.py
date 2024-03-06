@@ -1,7 +1,7 @@
 import os
 import re
 base_dir = 'src/tests/'
-test_dir = "if_statement"
+test_dir = "logical_operator"
 dir = base_dir + test_dir
 directory = os.fsencode(dir)
 
