@@ -162,7 +162,7 @@ impl Compiler {
     fn add_local(&mut self, token: Token, is_const: bool) {
         let local =  Local {name: token.clone(), depth: -1, is_const};
         for existing_locals in self.locals.clone() {
-            if existing_locals.name.lexeme == token.lexeme {
+            if existing_locals.name.lexeme == token.lexeme && self.scope_depth == existing_locals.depth {
                 self.parse_error(self.previous.clone(), Some(format!("Already a variable with this name in this scope.")));
             }
         }
@@ -262,7 +262,7 @@ impl Compiler {
         } else {
             self.statement_expression();
         }
-        let mut loop_start  = self.chunk.code.len()-1;
+        let mut loop_start  = self.chunk.code.len();
         let mut exit_jump: Option<usize> = None;
         if !self.token_match(TokenType::SEMICOLON) {
             self.expression();
@@ -275,7 +275,7 @@ impl Compiler {
 
         if !self.token_match(TokenType::RIGHT_PAREN) {
             let body_jump = self.emit_jump(OpCode::Jump(0xff));
-            let increment_start = self.chunk.code.len()-1;
+            let increment_start = self.chunk.code.len();
 
             self.expression();
             self.emit_byte(OpCode::Pop);
@@ -298,7 +298,7 @@ impl Compiler {
     }
 
     fn statement_while(&mut self) {
-        let loop_start = self.chunk.code.len() - 1;
+        let loop_start = self.chunk.code.len();
         self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'while'."));
         self.expression();
         self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after condition."));
@@ -313,7 +313,7 @@ impl Compiler {
     }
 
     fn emit_loop(&mut self, loop_start: usize) {
-        self.emit_byte(OpCode::Loop(self.chunk.code.len() - loop_start));
+        self.emit_byte(OpCode::Loop(self.chunk.code.len() - loop_start + 1));
     }
 
     fn statement_if(&mut self) {

@@ -1,0 +1,2 @@
+for (var a = 1; {}; a = a + 1) {} //Error at '{': Expect expression. Error at ')': Expect ';' after expression.
+

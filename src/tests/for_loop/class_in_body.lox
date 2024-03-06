@@ -1,0 +1,2 @@
+for (;;) class Foo {} // [line 1] Error at 'class': Expect expression.
+

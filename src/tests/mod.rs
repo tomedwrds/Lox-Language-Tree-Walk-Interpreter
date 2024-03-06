@@ -7,6 +7,7 @@ mod block;
 mod bool;
 mod comments;
 mod variable;
+mod for_loop;
 
 
 fn run_from_file(file: &str) -> Vec<String> {
