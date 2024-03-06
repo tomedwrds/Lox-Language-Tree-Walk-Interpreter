@@ -1,7 +1,7 @@
 import os
 import re
 base_dir = 'src/tests/'
-test_dir = "for_loop"
+test_dir = "while_loop"
 dir = base_dir + test_dir
 directory = os.fsencode(dir)
 
