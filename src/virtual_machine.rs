@@ -6,7 +6,8 @@ pub struct VirtualMachine {
     pub chunk: Chunk,
     pub stack: Stack,
     globals: HashMap<String, Global>,
-    output: Vec<String>
+    output: Vec<String>,
+    ip: usize
 }
 
 
@@ -41,7 +42,8 @@ pub fn interpret_vm(src: String, debug: bool) -> InterpreterOutput {
                 chunk,
                 stack: Stack::default(),
                 globals: HashMap::new(),
-                output: vec![]
+                output: vec![],
+                ip: 0
             };
             let program = vm.run(false);
             if let Err(error) = program {
@@ -73,15 +75,16 @@ pub fn interpret_vm(src: String, debug: bool) -> InterpreterOutput {
 
 
 impl VirtualMachine {
-    
 
     fn run(&mut self, execution_tracing: bool) -> Result<(), RuntimeError> {
-        let code = &self.chunk.code;
-        let constants = &self.chunk.constant;
-        let mut ip = 0;
-         
-        while ip < code.len() {
-            let (op_code, line_number) = &code[ip];
+        let constants = &self.chunk.constant.clone();
+        loop {
+            
+            let byte = &self.chunk.code[self.ip];
+            self.ip += 1;
+
+
+            let (op_code, line_number) = byte;
             if execution_tracing {
                 self.stack.display();
                 disassemble_instruction(op_code, line_number, constants); 
@@ -218,47 +221,48 @@ impl VirtualMachine {
                 OpCode::JumpIfFalse(jump_size) => {
                     match self.stack.peek() {
                         Value::Bool(condition) => if !condition {
-                            ip += jump_size;
+                            self.ip += jump_size;
                         },
-                        Value::Nil => ip += jump_size,
+                        Value::Nil => self.ip += jump_size,
                         _ => ()
                     }
                 },
                 OpCode::Jump(jump_size) => {
-                    ip += jump_size;
+                    self.ip += jump_size;
                 }, 
                 OpCode::Loop(jump_back) => {
-                    ip -= jump_back;
+                    self.ip -= jump_back;
                 },
                 OpCode::SwitchJump(jump_size) => {
                     let n1 = self.stack.pop();
                     let n2 = self.stack.peek();
                     if n1 != n2 {
-                        ip += jump_size;
+                        self.ip += jump_size;
                     }
                 },
-                OpCode::Break => {
-                    loop {
-                        let (next_opcode, _) = &code[ip];
-                        ip += 1;
-                        if let OpCode::Loop(_) = next_opcode {
-                            break;
-                        }
-                    }
-                }, OpCode::Continue => {
-                    loop {
-                        let (next_opcode, _) = &code[ip+1];
-                        if let OpCode::Loop(_) = next_opcode {
-                            break;
-                        } 
-                        ip += 1;
+                // OpCode::Break => {
+                //     loop {
+                //         let (next_opcode, _) = &code[ip];
+                //         self.ip += 1;
+                //         if let OpCode::Loop(_) = next_opcode {
+                //             break;
+                //         }
+                //     }
+                // }, OpCode::Continue => {
+                //     loop {
+                //         let (next_opcode, _) = &code[ip+1];
+                //         if let OpCode::Loop(_) = next_opcode {
+                //             break;
+                //         } 
+                //         self.ip += 1;
                         
 
-                    }
-                }
+                //     }
+                // }
+                _ => ()
             }
-            ip += 1;
         }
+        
         Ok(())
     }
 }
