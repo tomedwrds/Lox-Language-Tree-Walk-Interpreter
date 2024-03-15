@@ -1,15 +1,21 @@
 use std::{collections::HashMap, default, env::VarError};
 
-use crate::{bytecode::{Chunk, OpCode, Value}, compiler::{compile, CompilerOutput}, debug::{disassemble_chunk, disassemble_instruction}};
+use crate::{bytecode::{Chunk, OpCode, Value}, compiler::{compile, CompilerOutput, Function}, debug::{disassemble_chunk, disassemble_instruction}};
 
 pub struct VirtualMachine {
+    frames: Vec<CallFrame>,
+    frame_count: usize,
     pub chunk: Chunk,
     pub stack: Stack,
     globals: HashMap<String, Global>,
     output: Vec<String>,
-    ip: usize
 }
 
+struct CallFrame {
+    function: Function,
+    fp: usize,
+    slots: Value,
+}
 
 struct Global {
     value: Value,
@@ -34,16 +40,20 @@ enum RuntimeError {
 pub fn interpret_vm(src: String, debug: bool) -> InterpreterOutput {
 
     match compile(src) {
-        CompilerOutput::Chunk(chunk) => {
+        CompilerOutput::Success(function) => {
             if debug {
-                disassemble_chunk(&chunk, "Debug");
+                disassemble_chunk(&function, match function.name {
+                    Some(name) => &name,
+                    None => "<script>"
+                });
             }
             let mut vm = VirtualMachine {
                 chunk,
                 stack: Stack::default(),
                 globals: HashMap::new(),
                 output: vec![],
-                ip: 0
+                frame_count: 0,
+                frames: vec![]
             };
             let program = vm.run(false);
             if let Err(error) = program {

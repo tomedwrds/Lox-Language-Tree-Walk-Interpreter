@@ -4,7 +4,7 @@ use std::fmt::format;
 use crate::{bytecode::{Chunk, OpCode, Value}, debug::disassemble_chunk, scanner::{scan, Literal, Scanner, Token, TokenType}};
 
 pub fn compile(src: String) -> CompilerOutput {
-    let mut compiler = compiler_initalize(src);
+    let mut compiler = compiler_initalize(src, FunctionType::Script);
     compiler.advance();
    
     while !compiler.token_match(TokenType::EOF) {
@@ -14,13 +14,32 @@ pub fn compile(src: String) -> CompilerOutput {
     compiler.end_compiler();
     
     if compiler.error_message.is_empty() {
-        return CompilerOutput::Chunk(compiler.chunk)
+        return CompilerOutput::Success(compiler.function)
     }  
     return CompilerOutput::Error(compiler.error_message)
 }
 
+pub struct Function {
+    arity: i32,
+    chunk: Chunk,
+    pub name: Option<String>,
+}
+
+enum FunctionType {
+    Function,
+    Script
+}
+
+fn new_function() -> Function {
+    Function {
+        arity: 0,
+        name: None,
+        chunk: Chunk::default()
+    }
+}
+
 pub enum CompilerOutput {
-    Chunk(Chunk),
+    Success(Function),
     Error(Vec<String>)
 }
 struct Compiler {
@@ -28,11 +47,12 @@ struct Compiler {
     previous: Token,
     error_message: Vec<String>,
     panic_mode: bool,
-    chunk: Chunk,
     scanner: Scanner,
     locals: Vec<Local>,
     scope_depth: i32,
-    in_loop: bool
+    in_loop: bool,
+    function: Function,
+    function_type: FunctionType
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -43,13 +63,14 @@ pub struct Local {
 }
 
 
-fn compiler_initalize(src: String) -> Compiler {
+fn compiler_initalize(src: String, func_type: FunctionType) -> Compiler {
     Compiler {
         current: Token { token_type: TokenType::NIL, lexeme: format!(""), literal: None, line: 0 },
         previous: Token { token_type: TokenType::NIL, lexeme: format!(""), literal: None, line: 0 },
         error_message: vec![],
         panic_mode: false,
-        chunk: Chunk::default(),
+        function_type: func_type,
+        function: new_function(),
         scanner: scan(src),
         scope_depth: 0,
         locals: Vec::new(),
@@ -58,6 +79,10 @@ fn compiler_initalize(src: String) -> Compiler {
 }
 
 impl Compiler {
+    fn current_chunk(&mut self) -> &Chunk {
+       return &self.function.chunk;
+    }
+
     fn advance(&mut self) {
         self.previous = self.current.clone();
 
@@ -87,12 +112,12 @@ impl Compiler {
     }
 
     fn chunk_write(&mut self, op_code: OpCode, line: usize) {
-        self.chunk.code.push((op_code, line));
+        self.current_chunk().code.push((op_code, line));
     }
 
     fn constant_write(&mut self, value: Value) -> usize {
-        self.chunk.constant.push(value);
-        return self.chunk.constant.len() - 1;
+        self.current_chunk().constant.push(value);
+        return self.current_chunk().constant.len() - 1;
     }
 
     fn end_compiler(&mut self) {
@@ -141,8 +166,8 @@ impl Compiler {
         }
 
         let identifier_constant = self.identifier_constant(&self.previous.clone());
-        self.chunk.constant.push(Value::String(identifier_constant));
-        return self.chunk.constant.len() - 1;
+        self.current_chunk().constant.push(Value::String(identifier_constant));
+        return self.current_chunk().constant.len() - 1;
 
     }
 
@@ -262,7 +287,7 @@ impl Compiler {
         } else {
             self.statement_expression();
         }
-        let mut loop_start  = self.chunk.code.len();
+        let mut loop_start  = self.current_chunk().code.len();
         let mut exit_jump: Option<usize> = None;
         if !self.token_match(TokenType::SEMICOLON) {
             self.expression();
@@ -275,7 +300,7 @@ impl Compiler {
 
         if !self.token_match(TokenType::RIGHT_PAREN) {
             let body_jump = self.emit_jump(OpCode::Jump(0xff));
-            let increment_start = self.chunk.code.len();
+            let increment_start = self.current_chunk().code.len();
 
             self.expression();
             self.emit_byte(OpCode::Pop);
@@ -298,7 +323,7 @@ impl Compiler {
     }
 
     fn statement_while(&mut self) {
-        let loop_start = self.chunk.code.len();
+        let loop_start = self.current_chunk().code.len();
         self.consume(TokenType::LEFT_PAREN, format!("Expect '(' after 'while'."));
         self.expression();
         self.consume(TokenType::RIGHT_PAREN, format!("Expect ')' after condition."));
@@ -313,7 +338,8 @@ impl Compiler {
     }
 
     fn emit_loop(&mut self, loop_start: usize) {
-        self.emit_byte(OpCode::Loop(self.chunk.code.len() - loop_start + 1));
+        let chunk_length = self.current_chunk().code.len();
+        self.emit_byte(OpCode::Loop(chunk_length - loop_start + 1));
     }
 
     fn statement_if(&mut self) {
@@ -337,16 +363,16 @@ impl Compiler {
 
     fn emit_jump(&mut self, instruction: OpCode) -> usize {
         self.emit_byte(instruction);
-        return self.chunk.code.len()-1;
+        return self.current_chunk().code.len()-1;
     }
 
     fn patch_jump(&mut self, offset: usize) {
-        let jump_size = self.chunk.code.len() - 1 -offset;
-        let (opcode, line) = &self.chunk.code[offset];
+        let jump_size = self.current_chunk().code.len() - 1 -offset;
+        let (opcode, line) = &self.current_chunk().code[offset];
         match opcode {
-            OpCode::JumpIfFalse(_) => self.chunk.code[offset] = (OpCode::JumpIfFalse(jump_size), *line),
-            OpCode::Jump(_) => self.chunk.code[offset] = (OpCode::Jump(jump_size), *line),
-            OpCode::SwitchJump(_) => self.chunk.code[offset] = (OpCode::SwitchJump(jump_size), *line),
+            OpCode::JumpIfFalse(_) => self.current_chunk().code[offset] = (OpCode::JumpIfFalse(jump_size), *line),
+            OpCode::Jump(_) => self.current_chunk().code[offset] = (OpCode::Jump(jump_size), *line),
+            OpCode::SwitchJump(_) => self.current_chunk().code[offset] = (OpCode::SwitchJump(jump_size), *line),
             _ => panic!("Attempting to patch the jump of non jump opcode")
         }
         
@@ -423,8 +449,9 @@ impl Compiler {
     }
 
     fn emit_constant(&mut self, value: Value) {
-        self.chunk.constant.push(value);
-        self.emit_byte(OpCode::Constant(self.chunk.constant.len() - 1));
+        self.current_chunk().constant.push(value);
+        let chunk_length = self.current_chunk().constant.len();
+        self.emit_byte(OpCode::Constant(chunk_length - 1));
     }
 
     fn named_variable(&mut self, token: &Token, can_assign: bool) {    
